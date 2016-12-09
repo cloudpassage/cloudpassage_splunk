@@ -10,5 +10,6 @@ https://splunkbase.splunk.com/app/1627/#/details
 <!---
 
 #CPTAGS:community-supported archive
+#TBICON:images/python_icon.png
 
 -->
