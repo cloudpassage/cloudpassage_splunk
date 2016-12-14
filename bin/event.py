@@ -11,6 +11,8 @@ from functools import partial
 import settings as settings
 import cloudpassage
 import cputils as cputils
+from config_helper import ConfigHelper
+
 
 def _pickle_method(message):
     if message.im_self is None:
@@ -34,28 +36,13 @@ class Event(object):
         self.key_id = key_id
         self.secret_key = secret_key
         self.base_url = 'https://api.cloudpassage.com'
+        self.config = ConfigHelper()
 
-    # def create_halo_session_object(self):
-    #     """create halo session object"""
-    #     api_con = cpapi.CPAPI()
-    #     api_con.key_id = self.key_id
-    #     api_con.secret = self.secret_key
-    #     return api_con
     def create_halo_session_object(self):
-        session = cloudpassage.HaloSession(self.key_id, self.secret_key)
+        session = cloudpassage.HaloSession(self.key_id,
+                                           self.secret_key,
+                                           integration_string=self.config.ua)
         return session
-
-    # def get(self, per_page, date, page):
-    #     """get events from Halo"""
-
-    #     api = self.create_halo_session_object()
-    #     token = api.authenticateClient()
-    #     url = "v1/events?per_page=%s&page=%s&since=%s" % (per_page,
-    #                                                        page,
-    #                                                        date)
-
-    #     resp = api.doGetRequest("https://api.cloudpassage.com/%s" % (url), token)
-    #     return json.loads(resp[0])
 
     def get(self, per_page, date, page):
         """HTTP GET events from Halo"""
@@ -67,16 +54,6 @@ class Event(object):
                                                            date)
         return api.get(url)
 
-    # def latest_event(self, per_page, date, page):
-    #     """get the latest event from Halo"""
-
-    #     api = self.create_halo_session_object()
-    #     token = api.authenticateClient()
-    #     url = "v1/events?sort_by=created_at.desc&per_page=%s&page=%s&since=%s" % (per_page,
-    #                                                                                page,
-    #                                                                                date)
-    #     resp = api.doGetRequest("https://api.cloudpassage.com/%s" % (url), token)
-    #     return json.loads(resp[0])
     def latest_event(self, per_page, date, page):
         """get the latest event from Halo"""
 
