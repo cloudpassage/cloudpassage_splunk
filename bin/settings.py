@@ -19,4 +19,4 @@ def historical_limit():
 
 def threads():
     """max parallel threads"""
-    return 5
+    return 1
