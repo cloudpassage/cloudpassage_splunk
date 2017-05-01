@@ -51,8 +51,8 @@ class HaloSession(object):
         self.auth_endpoint = 'oauth/access_token'
         self.api_host = 'api.cloudpassage.com'
         self.api_port = 443
-        # self.sdk_version = utility.get_sdk_version()
-        self.sdk_version_string = "Halo-Python-SDK/%"
+        self.sdk_version = utility.get_sdk_version()
+        self.sdk_version_string = "Halo-Python-SDK/%s" % self.sdk_version
         self.user_agent = ''
         self.integration_string = ''
         self.key_id = apikey
