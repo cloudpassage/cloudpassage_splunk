@@ -147,21 +147,32 @@ def do_run():
 
 def processEventBatches(connLastTimestamp, authKeyID, authSecret):
     event = Event(authKeyID, authSecret)
-    print "<stream>"
-    logging.info("cphalo: processEventBatches_first %s" % type(connLastTimestamp))
 
+    print "<stream>"
+    logging.info("cphalo: processEventBatches_first %s" % connLastTimestamp)
     initial_event_id = event.latest_event("1", "", "1")["events"][0]["id"]
+    logging.info("cphalo: initial_event_id: %s" % initial_event_id )
+
     flag = True
     while flag:
         try:
+            logging.info("cphalo: processEventBatches: using time %s" % connLastTimestamp)
             batched = event.batch(connLastTimestamp)
+            logging.info("cphalo: batch list: %s" % batched)
         except TypeError:
             return connLastTimestamp
+
         start_date, connLastTimestamp = event.loop_date(batched, connLastTimestamp)
+        logging.info("cphalo: start_date %s" % start_date)
+        logging.info("cphalo: connLastTimestamp %s" % connLastTimestamp)
         logging.info("cphalo: processEventBatches")
-        formatEvents(batched)
         if event.id_exists_check(batched, initial_event_id):
+            batched.pop()
+            formatEvents(batched)
+            logging.info("cphalo: event id matches initial event id")
             flag = False
+        else:
+            formatEvents(batched)
     print "</stream>"
     return connLastTimestamp
 
