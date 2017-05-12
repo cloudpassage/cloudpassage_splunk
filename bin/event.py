@@ -31,17 +31,18 @@ class Event(object):
         secret_key: Halo API secret key
     """
 
-    def __init__(self, key_id, secret_key):
+    def __init__(self, key_id, secret_key, hostname):
         self.event_id_exist = True
         self.key_id = key_id
         self.secret_key = secret_key
-        self.base_url = 'https://api.cloudpassage.com'
+        self.base_url = hostname
         self.config = ConfigHelper()
 
     def create_halo_session_object(self):
         session = cloudpassage.HaloSession(self.key_id,
                                            self.secret_key,
-                                           integration_string=self.config.ua)
+                                           integration_string=self.config.ua,
+                                           api_host=self.base_url)
         return session
 
     def get(self, per_page, date, page):
