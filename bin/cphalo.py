@@ -128,7 +128,7 @@ def do_run():
             timestamp = datetime.datetime.today().date() - datetime.timedelta(days=90)
 
     logging.info("cphalo: startingTimestamp=%s" % timestamp)
-    timestamp = processEventBatches(timestamp, authKeyID, authSecret)
+    timestamp = processEventBatches(timestamp, authKeyID, authSecret, config['endpoint'])
     logging.info("cphalo: lastEventTimestamp=%s" % timestamp)
     if (timestamp != None):
         # # timestamp = cputils.getNowAsISO8601() # use this for current system time
@@ -145,8 +145,8 @@ def do_run():
     else:
         logging.info("cphalo: no events, not updating checkpoint")
 
-def processEventBatches(connLastTimestamp, authKeyID, authSecret):
-    event = Event(authKeyID, authSecret)
+def processEventBatches(connLastTimestamp, authKeyID, authSecret, hostname):
+    event = Event(authKeyID, authSecret, hostname)
 
     print "<stream>"
     logging.info("cphalo: processEventBatches_first %s" % connLastTimestamp)

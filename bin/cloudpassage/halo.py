@@ -162,10 +162,7 @@ class HaloSession(object):
         """This constructs everything to the left of the file path in the URL.
 
         """
-        if not sanity.validate_api_hostname(self.api_host):
-            error_message = "Bad API hostname: %s" % self.api_host
-            raise CloudPassageValidation(error_message)
-        prefix = "https://" + self.api_host + ":" + str(self.api_port)
+        prefix = self.api_host + ":" + str(self.api_port)
         return prefix
 
     def build_header(self):
