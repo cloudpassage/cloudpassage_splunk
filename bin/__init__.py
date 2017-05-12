@@ -3,4 +3,4 @@
 from config_helper import ConfigHelper
 
 __author__ = "toolbox@cloudpassage.com"
-__version__ = "2.0"
+__version__ = "2.1"
