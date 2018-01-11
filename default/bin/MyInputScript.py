@@ -1,59 +1,75 @@
-# import splunk.entity as entity
+"""credentialsFromSplunk.py
+    Credentials Stored in Splunk Credentials Class file
+"""
 
-# # access the credentials in /servicesNS/nobody/app_name/admin/passwords
-# def getCredentials(sessionKey):
-#    myapp = 'cp_test'
-#    try:
-#       # list all credentials
-#       entities = entity.getEntities(['admin', 'changeme'], namespace=myapp,
-#                                     owner='nobody', sessionKey=sessionKey)
-#    except Exception, e:
-#       raise Exception("Could not get %s credentials from splunk. Error: %s"
-#                       % (myapp, str(e)))
+class credential:
+    """ Credential object:
+        Attributes:
 
-#    # return first set of credentials
-#    for i, c in entities.items():
-#         return c['username'], c['clear_password']
+            app: the Splunk app storing the credential
+            realm: the system needing the credential
+            username: the username for the credential
+            password: the credential's password or key
 
-#    raise Exception("No credentials have been found")
+        access the credentials in /servicesNS/nobody/<myapp>/storage/passwords
+    """
 
-# def main():
-#     # read session key sent from splunkd
-#     sessionKey = sys.stdin.readline().strip()
+    def __init__(self, app, realm, username):
+        self.app = app
+        self.realm = realm
+        self.username = username
+        self.password = ""
 
-#     if len(sessionKey) == 0:
-#        sys.stderr.write("Did not receive a session key from splunkd. " +
-#                         "Please enable passAuth in inputs.conf for this " +
-#                         "script\n")
-#        exit(2)
+    def __str__(self):
+        """Function Override: Print credential object
+        """
 
-#     # now get twitter credentials - might exit if no creds are available
-#     username, password = getCredentials(sessionKey)
-#     # use the credentials to access the data source
+        return 'App:%s Realm:%s Username:%s Password:%s\r\n'% (self.app,self.realm,self.username,self.password)
 
-import splunk.entity as entity
-import splunk.auth, splunk.search
+    def getPassword(self, sessionkey):
+        import splunk.entity as entity
+        import urllib
 
-def getCredentials(sessionKey):
-    myapp = 'cloudpassage_splunk'
-    try:
-        # list all credentials
-        entities = entity.getEntities(
-            ['admin', 'passwords'], namespace=myapp,
-            owner='nobody', sessionKey=sessionKey)
-    except Exception, e:
-        raise Exception(
-            "Could not get %s credentials from splunk."
-            "Error: %s" % (myapp, str(e)))
-    credentials = []
-    # return credentials
-    for i, c in entities.items():
-        credentials.append((c['username'], c['clear_password']))
-    return credentials
-    raise Exception("No credentials have been found")
+        if len(sessionkey) == 0:
+            raise Exception, "No session key provided"
+        if len(self.username) == 0:
+            raise Exception, "No username provided"
+        if len(self.app) == 0:
+            raise Exception, "No app provided"
 
-sessionKey = splunk.auth.getSessionKey('admin','changeme')
-credentials = getCredentials(sessionKey)
-for username, password in credentials:
-    print username
-    print password
+        try:
+            # list all credentials
+            entity.refresh()
+            entities = entity.getEntities(['admin', 'passwords'], namespace=self.app, owner='nobody', sessionKey=sessionkey)
+        except Exception, e:
+            raise Exception, "Could not get %s credentials from splunk. Error: %s" % (self.app, str(e))
+
+        for i, c in entities.items():
+            if (c['realm'] == self.realm and c['username'] == self.username):
+                self.password = c['clear_password']
+                return
+
+        raise Exception, "No credentials have been found"
+
+def main():
+
+        import os
+        import sys
+
+        sessionkey = sys.stdin.readline().strip()
+        realm = 'googledocs'
+        app = 'myadmin'
+        username = 'admin'
+
+        splunkCredential = credential(app,realm,username)
+        splunkCredential.getPassword(sessionKey)
+
+        print splunkCredential
+        Logging.info(splunkCredential)
+
+if __name__ == "__main__":
+    """You will get an error on importing the Splunk entity class if not run via the Splunk context
+        try $SPLUNK_PATH/bin/splunk cmd python credentials.py
+        You will still get an error without a valid session key so just expect an error when testing by hand
+    """
+    main()
