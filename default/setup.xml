@@ -1,0 +1,13 @@
+<setup>
+<block title="Add new credentials" endpoint="storage/passwords" entity="_new">
+  <input field="api_key_id">
+    <label>Api Key ID</label>
+    <type>text</type>
+  </input>
+
+  <input field="api_secret_key">
+    <label>Api Secret Key</label>
+    <type>password</type>
+  </input>
+</block>
+</setup>

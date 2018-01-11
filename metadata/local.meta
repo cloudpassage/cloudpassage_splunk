@@ -5,3 +5,11 @@ modtime = 1515694053.119520000
 [app/launcher]
 version = 6.5.1
 modtime = 1515694053.121527000
+
+[app/install/install_source_checksum]
+version = 7.0.1
+modtime = 1515698880.319641000
+
+[app/install/is_configured]
+version = 7.0.1
+modtime = 1515700221.492127000
