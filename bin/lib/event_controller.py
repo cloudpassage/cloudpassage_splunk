@@ -6,9 +6,7 @@ import os
 import signal
 import json
 from functools import partial
-# import settings as settings
 import cloudpassage
-# import cputils as cputils
 from lib.credential import Credential
 
 def _pickle_method(message):

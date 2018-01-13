@@ -5,8 +5,9 @@
 
 import os
 import sys
-import splunk.auth
+import json
 import splunk.entity as entity
+import splunk.Intersplunk
 
 
 class Credential(object):
@@ -29,11 +30,11 @@ class Credential(object):
         """Function Override: Print credential object
         """
 
-        return 'App:%s Username:%s Password:%s\r\n'% (self.app,self.username,self.password)
+        return 'App:%s Username:%s Password:%s\r\n SessionKey:%s'% (self.app,self.username, self.password, self.sessionKey)
 
-    def getPassword(self, sessionkey):
+    def getPassword(self):
 
-        if len(sessionkey) == 0:
+        if len(self.sessionKey) == 0:
             raise Exception, "No session key provided"
         if len(self.username) == 0:
             raise Exception, "No username provided"
@@ -41,7 +42,7 @@ class Credential(object):
             raise Exception, "No app provided"
 
         try:
-            entities = entity.getEntities(['admin', 'passwords'], namespace=self.app, owner='nobody', sessionKey=sessionkey)
+            entities = entity.getEntities(['admin', 'passwords'], namespace=self.app, owner='nobody', sessionKey=self.sessionKey)
         except Exception, e:
             raise Exception, "Could not get %s credentials from splunk. Error: %s" % (self.app, str(e))
 
@@ -52,9 +53,28 @@ class Credential(object):
 
         raise Exception, "No credentials have been found"
 
+    def find_between(self, s, first, last ):
+        try:
+            start = s.index( first ) + len( first )
+            end = s.index( last, start )
+            return s[start:end]
+        except ValueError:
+            return ""
+
+    def find_between_r(self, s, first, last ):
+        try:
+            start = s.rindex( first ) + len( first )
+            end = s.rindex( last, start )
+            return s[start:end]
+        except ValueError:
+            return ""
+
     def run(self):
-        # sessionKey = sys.stdin.readline().strip()
-        self.app = 'cloudpassage-splunk'
-        self.username = 'mykey'
-        sessionKey = splunk.auth.getSessionKey('admin','changeme')
-        self.getPassword(sessionKey)
+        results,dummy,settings = splunk.Intersplunk.getOrganizedResults()
+        if settings:
+            s = str(settings)
+            self.find_between(s, "<session_key>", "</session_key>" )
+            self.sessionKey = self.find_between_r(s, "<session_key>", "</session_key>")
+            self.app = 'cloudpassage'
+            self.username = 'mykey'
+            self.getPassword()
