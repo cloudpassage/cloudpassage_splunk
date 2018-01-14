@@ -27,13 +27,14 @@ class Event(Credential):
     """
 
     def __init__(self):
-        super(Event, self).__init__()
+        # super(Event, self).__init__()
         self.event_id_exist = True
         self.base_url = 'https://api.cloudpassage.com'
-        print self.password
+        # print self.password
 
     def create_halo_session_object(self):
-        session = cloudpassage.HaloSession(self.key_id, self.secret_key)
+        print 'in create_halo_session_object'
+        session = cloudpassage.HaloSession('c63736fb', '1710f29dc94e436d6f382dc2c4ddc45e')
         return session
 
     def get(self, per_page, date, page):
@@ -48,8 +49,9 @@ class Event(Credential):
 
     def latest_event(self, per_page, date, page):
         """get the latest event from Halo"""
-
+        print 'in latest_event'
         session = self.create_halo_session_object()
+        print session
         api = cloudpassage.HttpHelper(session)
         url = "/v1/events?sort_by=created_at.desc&per_page=%s&page=%s&since=%s" % (per_page,
                                                                                    page,
