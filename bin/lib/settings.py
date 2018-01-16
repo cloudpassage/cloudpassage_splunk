@@ -10,7 +10,7 @@ def per_page():
 
 def pagination_limit():
     """max page return"""
-    return 5
+    return 50
 
 def historical_limit():
     """max days"""
