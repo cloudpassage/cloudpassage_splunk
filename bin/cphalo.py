@@ -2,12 +2,12 @@ import os
 import sys
 import lib
 import json
-import xml.dom.minidom, xml.sax.saxutils
+from datetime import datetime, timedelta
 import splunklib.client as client
+
 from splunklib.modularinput import *
 
 class MyScript(Script):
-
     # Define some global variables
     MASK           = "<nothing to see here>"
     APP            = __file__.split(os.sep)[-3]
@@ -15,7 +15,6 @@ class MyScript(Script):
     CLEAR_PASSWORD = None
 
     def get_scheme(self):
-
         scheme = Scheme("Splunk Modular Input Credential Example")
         scheme.description = ("Demonstrates how to encrypt/decrypt credentials in modular inputs.")
         scheme.use_external_validation = True
@@ -40,14 +39,25 @@ class MyScript(Script):
         )
         scheme.add_argument(password_arg)
 
+        start_date_arg = Argument(
+            name="start_date",
+            title="Start Date. <If checkpoint exists, it will take precedence>",
+            data_type=Argument.data_type_string,
+            required_on_create=False,
+            required_on_edit=False
+        )
+        scheme.add_argument(start_date_arg)
+
         return scheme
 
     def validate_input(self, definition):
         session_key = definition.metadata["session_key"]
-        api_key    = definition.parameters["api_key"]
-        secret_key    = definition.parameters["secret_key"]
+        api_key = definition.parameters["api_key"]
+        secret_key = definition.parameters["secret_key"]
 
         try:
+            if "start_date" in definition.parameters:
+                start_date = definition.parameters["start_date"]
             # Do checks here.  For example, try to connect to whatever you need the credentials for using the credentials provided.
             # If everything passes, create a credential with the provided input.
             pass
@@ -96,12 +106,26 @@ class MyScript(Script):
             if storage_password.username == api_key:
                 return storage_password.content.clear_password
 
+    def past_date(self, ago):
+        date = (datetime.now() - timedelta(days=ago)).strftime("%Y-%m-%d")
+        return date
+
+    def get_start_date(self, input_items, checkpoint):
+        if checkpoint:
+            return checkpoint
+        if "start_date" in input_items:
+            return input_items["start_date"]
+        return self.past_date(90)
+
     def stream_events(self, inputs, ew):
         self.input_name, self.input_items = inputs.inputs.popitem()
         session_key = self._input_definition.metadata["session_key"]
         api_key = self.input_items["api_key"]
-        secret_key   = self.input_items['secret_key']
+        secret_key = self.input_items["secret_key"]
         self.USERNAME = api_key
+
+        state_store = lib.FileStateStore(inputs.metadata, self.input_name)
+        start_date = self.get_start_date(self.input_items, state_store.get_state("created_at"))
 
         try:
             # If the password is not masked, mask it.
@@ -114,17 +138,19 @@ class MyScript(Script):
             ew.log("ERROR", "Error: %s" % str(e))
 
         ew.log("INFO", "USERNAME:%s CLEAR_PASSWORD:%s" % (self.USERNAME, self.CLEAR_PASSWORD))
+        ew.log("INFO", "Starting from %s" % (start_date))
+
         e = lib.Event(api_key, self.CLEAR_PASSWORD)
-        r = e.latest_event(1, '2018-01-01', 1)
-        evStr = json.dumps(r)
-        xmlStr = "<event><data>%s</data></event>" % xml.sax.saxutils.escape(evStr)
+        # result = e.retrieve_events(start_date)
 
-        event = Event()
-        event.stanza = 'test1'
-        event.data = xmlStr
+        # for ev in result:
+            event = Event()
+            event.stanza = self.input_name
+            # event.data = json.dumps(ev)
 
-        # Tell the EventWriter to write this event
-        ew.write_event(event)
+            ew.write_event(event)
+            state_store.update_state("created_at", ev['created_at'])
+
 if __name__ == "__main__":
     exitcode = MyScript().run(sys.argv)
     sys.exit(exitcode)
