@@ -154,12 +154,12 @@ class MyScript(Script):
 
         state_store = lib.FileStateStore(inputs.metadata, self.input_name)
         start_date = self.get_start_date(self.input_items, state_store.get_state("created_at"))
-
+        ew.log("INFO", "START DATE IS %s" % (start_date))
         try:
             # If the password is not masked, mask it.
             if secret_key != self.MASK:
                 self.encrypt_password(api_key, secret_key, session_key)
-                self.mask_password(session_key, api_key, api_host, api_port, startdate)
+                self.mask_password(session_key, api_key, api_host, api_port, start_date)
 
             self.CLEAR_PASSWORD = self.get_password(session_key, api_key)
         except Exception as e:
@@ -170,11 +170,12 @@ class MyScript(Script):
 
         e = lib.Event(api_key, self.CLEAR_PASSWORD)
         # result = e.retrieve_events(start_date)
+        result = e.get(1, start_date, 1)
 
-        # for ev in result:
+        for ev in result['events']:
             event = Event()
             event.stanza = self.input_name
-            # event.data = json.dumps(ev)
+            event.data = json.dumps(ev)
 
             ew.write_event(event)
             state_store.update_state("created_at", ev['created_at'])
