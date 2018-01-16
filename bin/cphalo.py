@@ -69,20 +69,19 @@ class MyScript(Script):
 
         return scheme
 
-
     def validate_input(self, validation_definition):
         session_key   = validation_definition.metadata["session_key"]
         api_key       = validation_definition.parameters["api_key"]
         secret_key    = validation_definition.parameters["secret_key"]
         api_host      = validation_definition.parameters["api_host"]
+        start_date     = validation_definition.parameters["start_date"]
         api_port      = validation_definition.parameters["api_port"]
 
+        if secret_key == self.MASK:
+            secret_key = self.get_password(session_key, api_key)
         try:
             validate.halo_session(api_key, secret_key, api_host, api_port)
-            if "start_date" in validation_definition.parameters:
-                start_date = validation_definition.parameters["start_date"]
-                validate.startdate(start_date)
-            pass
+            validate.startdate(start_date)
         except Exception as e:
             raise Exception, "Something did not go right: %s" % str(e)
 
@@ -131,6 +130,15 @@ class MyScript(Script):
             if storage_password.username == api_key:
                 return storage_password.content.clear_password
 
+    def send_arr_events(self, ew, input_name, state_store, events):
+        for ev in events:
+            event = Event()
+            event.stanza = input_name
+            event.data = json.dumps(ev)
+
+            ew.write_event(event)
+            state_store.update_state("created_at", ev['created_at'])
+
     def stream_events(self, inputs, ew):
         self.input_name, self.input_items = inputs.inputs.popitem()
         session_key = self._input_definition.metadata["session_key"]
@@ -141,10 +149,8 @@ class MyScript(Script):
         self.USERNAME = api_key
 
         state_store = lib.FileStateStore(inputs.metadata, self.input_name)
-        # start_date = self.get_start_date(self.input_items, state_store.get_state("created_at"))
         start_date = dateUtil.get_start_date(self.input_items, state_store.get_state("created_at"))
 
-        ew.log("INFO", "START DATE IS %s" % (start_date))
         try:
             # If the password is not masked, mask it.
             if secret_key != self.MASK:
@@ -159,16 +165,22 @@ class MyScript(Script):
         ew.log("INFO", "Starting from %s" % (start_date))
 
         e = lib.Event(api_key, self.CLEAR_PASSWORD)
-        # result = e.retrieve_events(start_date)
-        result = e.get(1, start_date, 1)
+        connLastTimestamp = start_date
+        initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
 
-        for ev in result['events']:
-            event = Event()
-            event.stanza = self.input_name
-            event.data = json.dumps(ev)
-
-            ew.write_event(event)
-            state_store.update_state("created_at", ev['created_at'])
+        flag = True
+        while flag:
+            batched = e.batch(connLastTimestamp)
+            start_date, connLastTimestamp = e.loop_date(batched, connLastTimestamp)
+            ew.log("INFO", "cphalo: start_date %s" % start_date)
+            ew.log("INFO", "cphalo: connLastTimestamp %s" % connLastTimestamp)
+            if e.id_exists_check(batched, initial_event_id):
+                batched.pop()
+                self.send_arr_events(ew, self.input_name, state_store, batched)
+                ew.log("INFO", "cphalo: event id matches initial event id")
+                flag = False
+            else:
+                self.send_arr_events(ew, self.input_name, state_store, batched)
 
 if __name__ == "__main__":
     exitcode = MyScript().run(sys.argv)

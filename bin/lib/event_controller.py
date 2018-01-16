@@ -6,6 +6,7 @@ import os
 import signal
 import json
 from functools import partial
+import settings as settings
 import cloudpassage
 
 
@@ -67,22 +68,17 @@ class Event(object):
 
     def batch(self, date):
         """multiprocessing to get all the events"""
-
         batched = []
-        mpool = multiprocessing.Pool(settings.threads(), self.init_worker)
         paginations = list(range(1, settings.pagination_limit() + 1))
         per_page = str(settings.per_page())
 
         try:
-            partial_get = partial(self.get, per_page, date)
-            data = mpool.map(partial_get, paginations)
-            for i in data:
-                batched.extend(i["events"])
+            for page in paginations:
+                data = self.get(per_page, date, page)
+                batched.extend(data["events"])
             return batched
         except KeyboardInterrupt:
             print "Caught KeyboardInterrupt, terminating workers"
-            mpool.terminate()
-            mpool.join()
 
     def historical_limit_date(self):
         """get historical_limit_date (90 days)"""
