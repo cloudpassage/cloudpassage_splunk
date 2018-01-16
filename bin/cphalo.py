@@ -164,7 +164,7 @@ class MyScript(Script):
         ew.log("INFO", "USERNAME:%s CLEAR_PASSWORD:%s" % (self.USERNAME, self.CLEAR_PASSWORD))
         ew.log("INFO", "Starting from %s" % (start_date))
 
-        e = lib.Event(api_key, self.CLEAR_PASSWORD)
+        e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, api_port)
         connLastTimestamp = start_date
         initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
 
@@ -172,12 +172,11 @@ class MyScript(Script):
         while flag:
             batched = e.batch(connLastTimestamp)
             start_date, connLastTimestamp = e.loop_date(batched, connLastTimestamp)
-            ew.log("INFO", "cphalo: start_date %s" % start_date)
-            ew.log("INFO", "cphalo: connLastTimestamp %s" % connLastTimestamp)
+            ew.log("INFO", "cphalo: saved events from %s to %s" % (start_date, connLastTimestamp))
             if e.id_exists_check(batched, initial_event_id):
                 batched.pop()
                 self.send_arr_events(ew, self.input_name, state_store, batched)
-                ew.log("INFO", "cphalo: event id matches initial event id")
+                ew.log("INFO", "cphalo: finished collecting all the existing events")
                 flag = False
             else:
                 self.send_arr_events(ew, self.input_name, state_store, batched)
