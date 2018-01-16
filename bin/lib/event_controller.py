@@ -27,12 +27,10 @@ class Event(object):
     """
 
     def __init__(self, key_id, secret_key):
-        # super(Event, self).__init__()
         self.event_id_exist = True
         self.base_url = 'https://api.cloudpassage.com'
         self.key_id = key_id
         self.secret_key = secret_key
-        # print self.password
 
     def create_halo_session_object(self):
         session = cloudpassage.HaloSession(self.key_id, self.secret_key)

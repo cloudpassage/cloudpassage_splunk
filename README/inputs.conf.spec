@@ -1,5 +1,7 @@
 [cphalo://<name>]
 
-* authentication
-api_key = <value>
+api_key    = <value>
 secret_key = <value>
+api_host   = <value>
+api_port   = <value>
+startdate  = <value>
