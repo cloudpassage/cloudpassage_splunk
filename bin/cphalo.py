@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 import splunklib.client as client
 
 from splunklib.modularinput import *
+import lib.validate as validate
+import datetime
 
 class MyScript(Script):
     # Define some global variables
@@ -15,33 +17,51 @@ class MyScript(Script):
     CLEAR_PASSWORD = None
 
     def get_scheme(self):
-        scheme = Scheme("Splunk Modular Input Credential Example")
+        scheme = Scheme("CloudPassage Splunk Connector")
         scheme.description = ("Demonstrates how to encrypt/decrypt credentials in modular inputs.")
         scheme.use_external_validation = True
         scheme.streaming_mode_xml = True
         scheme.use_single_instance = False
 
-        username_arg = Argument(
+        api_key_arg = Argument(
             name="api_key",
-            title="User name",
+            title="API Key",
             data_type=Argument.data_type_string,
             required_on_create=True,
             required_on_edit=True
         )
-        scheme.add_argument(username_arg)
+        scheme.add_argument(api_key_arg)
 
-        password_arg = Argument(
+        secret_key_arg = Argument(
             name="secret_key",
-            title="Password",
+            title="API Secret Key",
             data_type=Argument.data_type_string,
             required_on_create=True,
             required_on_edit=True
         )
-        scheme.add_argument(password_arg)
+        scheme.add_argument(secret_key_arg)
+
+        hostname_arg = Argument(
+            name="api_host",
+            title="API Hostname",
+            data_type=Argument.data_type_string,
+            required_on_create=True,
+            required_on_edit=True
+        )
+        scheme.add_argument(hostname_arg)
+
+        port_arg = Argument(
+            name="api_port",
+            title="API Port",
+            data_type=Argument.data_type_string,
+            required_on_create=True,
+            required_on_edit=True
+        )
+        scheme.add_argument(port_arg)
 
         start_date_arg = Argument(
             name="start_date",
-            title="Start Date. <If checkpoint exists, it will take precedence>",
+            title="Start Date. (If checkpoint exists, it will take precedence)",
             data_type=Argument.data_type_string,
             required_on_create=False,
             required_on_edit=False
@@ -50,16 +70,19 @@ class MyScript(Script):
 
         return scheme
 
-    def validate_input(self, definition):
-        session_key = definition.metadata["session_key"]
-        api_key = definition.parameters["api_key"]
-        secret_key = definition.parameters["secret_key"]
+
+    def validate_input(self, validation_definition):
+        session_key   = validation_definition.metadata["session_key"]
+        api_key       = validation_definition.parameters["api_key"]
+        secret_key    = validation_definition.parameters["secret_key"]
+        api_host      = validation_definition.parameters["api_host"]
+        api_port      = validation_definition.parameters["api_port"]
 
         try:
-            if "start_date" in definition.parameters:
-                start_date = definition.parameters["start_date"]
-            # Do checks here.  For example, try to connect to whatever you need the credentials for using the credentials provided.
-            # If everything passes, create a credential with the provided input.
+            validate.halo_session(api_key, secret_key, api_host, api_port)
+            if "start_date" in validation_definition.parameters:
+                start_date = validation_definition.parameters["start_date"]
+                validate.startdate(start_date)
             pass
         except Exception as e:
             raise Exception, "Something did not go right: %s" % str(e)
@@ -81,7 +104,7 @@ class MyScript(Script):
         except Exception as e:
             raise Exception, "An error occurred updating credentials. Please ensure your user account has admin_all_objects and/or list_storage_passwords capabilities. Details: %s" % str(e)
 
-    def mask_password(self, session_key, api_key):
+    def mask_password(self, session_key, api_key, api_host, api_port, start_date):
         try:
             args = {'token':session_key}
             service = client.connect(**args)
@@ -90,7 +113,10 @@ class MyScript(Script):
 
             kwargs = {
                 "api_key": api_key,
-                "secret_key": self.MASK
+                "secret_key": self.MASK,
+                "api_host": api_host,
+                "api_port": api_port,
+                "start_date": start_date
             }
             item.update(**kwargs).refresh()
 
@@ -120,8 +146,10 @@ class MyScript(Script):
     def stream_events(self, inputs, ew):
         self.input_name, self.input_items = inputs.inputs.popitem()
         session_key = self._input_definition.metadata["session_key"]
-        api_key = self.input_items["api_key"]
-        secret_key = self.input_items["secret_key"]
+        api_key     = self.input_items["api_key"]
+        secret_key  = self.input_items['secret_key']
+        api_host    = self.input_items['api_host']
+        api_port    = self.input_items['api_port']
         self.USERNAME = api_key
 
         state_store = lib.FileStateStore(inputs.metadata, self.input_name)
@@ -131,7 +159,7 @@ class MyScript(Script):
             # If the password is not masked, mask it.
             if secret_key != self.MASK:
                 self.encrypt_password(api_key, secret_key, session_key)
-                self.mask_password(session_key, api_key)
+                self.mask_password(session_key, api_key, api_host, api_port, startdate)
 
             self.CLEAR_PASSWORD = self.get_password(session_key, api_key)
         except Exception as e:
