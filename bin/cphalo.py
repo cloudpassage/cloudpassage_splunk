@@ -2,12 +2,11 @@ import os
 import sys
 import lib
 import json
-from datetime import datetime, timedelta
 import splunklib.client as client
+import lib.validate as validate
+import lib.date_util as dateUtil
 
 from splunklib.modularinput import *
-import lib.validate as validate
-import datetime
 
 class MyScript(Script):
     # Define some global variables
@@ -132,17 +131,6 @@ class MyScript(Script):
             if storage_password.username == api_key:
                 return storage_password.content.clear_password
 
-    def past_date(self, ago):
-        date = (datetime.now() - timedelta(days=ago)).strftime("%Y-%m-%d")
-        return date
-
-    def get_start_date(self, input_items, checkpoint):
-        if checkpoint:
-            return checkpoint
-        if "start_date" in input_items:
-            return input_items["start_date"]
-        return self.past_date(90)
-
     def stream_events(self, inputs, ew):
         self.input_name, self.input_items = inputs.inputs.popitem()
         session_key = self._input_definition.metadata["session_key"]
@@ -153,7 +141,9 @@ class MyScript(Script):
         self.USERNAME = api_key
 
         state_store = lib.FileStateStore(inputs.metadata, self.input_name)
-        start_date = self.get_start_date(self.input_items, state_store.get_state("created_at"))
+        # start_date = self.get_start_date(self.input_items, state_store.get_state("created_at"))
+        start_date = dateUtil.get_start_date(self.input_items, state_store.get_state("created_at"))
+
         ew.log("INFO", "START DATE IS %s" % (start_date))
         try:
             # If the password is not masked, mask it.
