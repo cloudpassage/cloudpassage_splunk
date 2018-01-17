@@ -148,10 +148,13 @@ class MyScript(Script):
         secret_key  = self.input_items['secret_key']
         api_host    = self.input_items['api_host']
         api_port    = self.input_items['api_port']
+        event_id_exist = True
+        first_batch = True
         self.USERNAME = api_key
 
         state_store = lib.FileStateStore(inputs.metadata, self.input_name)
-        start_date = dateUtil.get_start_date(self.input_items, state_store.get_state("created_at"))
+        checkpoint = state_store.get_state("created_at")
+        start_date = dateUtil.get_start_date(self.input_items, checkpoint)
 
         try:
             # If the password is not masked, mask it.
@@ -167,21 +170,23 @@ class MyScript(Script):
         ew.log("INFO", "Starting from %s" % (start_date))
 
         e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, api_port)
-        connLastTimestamp = start_date
-        initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
 
-        flag = True
-        while flag:
-            batched = e.batch(connLastTimestamp)
-            start_date, connLastTimestamp = e.loop_date(batched, connLastTimestamp)
-            ew.log("INFO", "cphalo: saved events from %s to %s" % (start_date, connLastTimestamp))
+        end_date = start_date
+        initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
+        while event_id_exist:
+            batched = e.batch(end_date)
+            start_date, end_date = e.loop_date(batched, end_date)
             if e.id_exists_check(batched, initial_event_id):
-                batched.pop()
+                ew.log("INFO", "cphalo: finished collecting all the existing events, saving final events")
+                event_id_exist = False
+
+            if checkpoint and first_batch:
+                first_batch = False
+                batched.pop(0)
+
+            if batched:
                 self.send_arr_events(ew, self.input_name, state_store, batched)
-                ew.log("INFO", "cphalo: finished collecting all the existing events")
-                flag = False
-            else:
-                self.send_arr_events(ew, self.input_name, state_store, batched)
+                ew.log("INFO", "cphalo: saved events from %s to %s" % (start_date, end_date))
 
 if __name__ == "__main__":
     exitcode = MyScript().run(sys.argv)
