@@ -74,14 +74,16 @@ class MyScript(Script):
         api_key       = validation_definition.parameters["api_key"]
         secret_key    = validation_definition.parameters["secret_key"]
         api_host      = validation_definition.parameters["api_host"]
-        start_date     = validation_definition.parameters["start_date"]
         api_port      = validation_definition.parameters["api_port"]
 
         if secret_key == self.MASK:
             secret_key = self.get_password(session_key, api_key)
         try:
+            if validation_definition.parameters["start_date"]:
+                start_date = validation_definition.parameters["start_date"]
+                validate.startdate(start_date)
+
             validate.halo_session(api_key, secret_key, api_host, api_port)
-            validate.startdate(start_date)
         except Exception as e:
             raise Exception, "Something did not go right: %s" % str(e)
 
