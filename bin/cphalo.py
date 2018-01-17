@@ -177,7 +177,7 @@ class MyScript(Script):
             batched = e.batch(end_date)
             start_date, end_date = e.loop_date(batched, end_date)
             if e.id_exists_check(batched, initial_event_id):
-                ew.log("INFO", "cphalo: finished collecting all the existing events, saving final events")
+                ew.log("INFO", "cphalo: detected initial event id match. Saving as final batch.")
                 event_id_exist = False
 
             if checkpoint and first_batch:
