@@ -166,7 +166,6 @@ class MyScript(Script):
         except Exception as e:
             ew.log("ERROR", "Error: %s" % str(e))
 
-        ew.log("INFO", "USERNAME:%s CLEAR_PASSWORD:%s" % (self.USERNAME, self.CLEAR_PASSWORD))
         ew.log("INFO", "Starting from %s" % (start_date))
 
         e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, api_port)
