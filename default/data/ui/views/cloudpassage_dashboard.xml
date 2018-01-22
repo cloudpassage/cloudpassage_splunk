@@ -14,21 +14,21 @@
       <searchString>index=cloudpassage sourcetype=cp_halo critical=true | stats count</searchString>
       <earliestTime>$earliest$</earliestTime>
       <latestTime>$latest$</latestTime>
-      <option name="linkView">search</option>
-      <option name="afterLabel">Critical Violations</option>
+      <option name="drilldown">search</option>
+      <option name="underLabel">Critical Violations</option>
     </single>
     <single>
       <searchString>index=cloudpassage sourcetype=cp_halo critical=false | stats count</searchString>
       <earliestTime>$earliest$</earliestTime>
       <latestTime>$latest$</latestTime>
-      <option name="linkView">search</option>
-      <option name="afterLabel">Non-Critical Violations</option>
+      <option name="drilldown">search</option>
+      <option name="underLabel">Non-Critical Violations</option>
     </single>
   </row>
   <row>
     <table>
       <title>Top Event Types</title>
-      <searchString>index=cloudpassage 
+      <searchString>index=cloudpassage
 | stats count as events sparkline by name
 | sort -events</searchString>
       <earliestTime>$earliest$</earliestTime>
@@ -90,7 +90,7 @@
   <row>
     <chart>
       <title>Events by Server Group</title>
-      <searchString>index=cloudpassage sourcetype=cp_halo 
+      <searchString>index=cloudpassage sourcetype=cp_halo
 | stats count by server_group_name
 | sort -count limit=10</searchString>
       <earliestTime>$earliest$</earliestTime>
@@ -120,7 +120,7 @@
     </chart>
     <table>
       <title>Events by Server Group</title>
-      <searchString>index=cloudpassage sourcetype=cp_halo 
+      <searchString>index=cloudpassage sourcetype=cp_halo
 | stats count by server_group_name
 | sort -count</searchString>
       <earliestTime>$earliest$</earliestTime>
