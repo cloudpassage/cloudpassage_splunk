@@ -30,7 +30,7 @@
       <option name="charting.layout.splitSeries">0</option>
       <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
       <option name="charting.legend.placement">none</option>
-      <option name="height">300px</option>
+      <option name="height">300</option>
       <option name="charting.seriesColors">[0x00aeef, 0x179caa, 0xd31820, 0x00a950, 0x4d85c5, 0x3cb3ca, 0x004990]</option>
       <drilldown>
         <link>halo_event_search?form.s_name=$row.name$</link>
@@ -60,14 +60,14 @@
       <option name="charting.layout.splitSeries">0</option>
       <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
       <option name="charting.legend.placement">top</option>
-      <option name="height">300px</option>
+      <option name="height">300</option>
       <option name="charting.seriesColors">[0x00aeef, 0x179caa, 0xd31820, 0x00a950, 0x4d85c5, 0x3cb3ca, 0x004990]</option>
     </chart>
   </row>
   <row>
     <chart>
       <title>Violations Per Server Group</title>
-      <searchString>index=cloudpassage sourcetype=cp_halo 
+      <searchString>index=cloudpassage sourcetype=cp_halo
 ( name="File Integrity object signature changed" OR name="File Integrity object missing" OR name="File Integrity object added" OR name="Configuration rule matched" OR name="Software vulnerability detected" OR name="Daemon compromised" OR name="Server firewall modified" OR name="Multiple root accounts detected" )
 | chart count over server_group_name by name</searchString>
       <earliestTime>$earliest$</earliestTime>
@@ -87,7 +87,7 @@
       <option name="charting.layout.splitSeries">0</option>
       <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
       <option name="charting.legend.placement">top</option>
-      <option name="height">300px</option>
+      <option name="height">300</option>
       <option name="charting.seriesColors">[0x00aeef, 0x179caa, 0xd31820, 0x00a950, 0x4d85c5, 0x3cb3ca, 0x004990]</option>
       <drilldown>
         <link>halo_event_search?form.s_server_group_name=$row.server_group_name$&amp;form.s_name=$click.name2$</link>

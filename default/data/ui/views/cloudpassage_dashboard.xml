@@ -42,7 +42,7 @@
         <option name="lineColor">#5379af</option>
         <option name="fillColor">#CCDDFF</option>
         <option name="lineWidth">1</option>
-        <option name="height">20px</option>
+        <option name="height">20</option>
       </format>
       <drilldown>
         <link>halo_event_search?form.s_name=$row.name$</link>
@@ -69,7 +69,7 @@
       <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
       <option name="charting.legend.placement">top</option>
       <option name="charting.fieldColors">{"Critical":0xd31820, "Non-critical":0x004990}</option>
-      <option name="height">300px</option>
+      <option name="height">300</option>
     </chart>
     <table id="table1">
       <title>Events By Policy</title>

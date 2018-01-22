@@ -8,7 +8,7 @@
 	</fieldset>
 	<row>
 		<map id="element3">
-			<searchString>index=cloudpassage sourcetype=cp_halo 
+			<searchString>index=cloudpassage sourcetype=cp_halo
 | iplocation server_ip_address
 | geostats latfield=lat longfield=lon count</searchString>
 			<earliestTime>$earliest$</earliestTime>
@@ -21,7 +21,7 @@
 			<option name="mapping.map.zoom">3</option>
 			<option name="mapping.tileLayer.minZoom">2</option>
 			<option name="mapping.tileLayer.maxZoom">10</option>
-			<option name="height">500px</option>
+			<option name="height">500</option>
 		</map>
 	</row>
 </form>
