@@ -49,14 +49,23 @@ class MyScript(Script):
         )
         scheme.add_argument(hostname_arg)
 
-        port_arg = Argument(
-            name="proxy",
+        proxy_host_arg = Argument(
+            name="proxy_host",
             title="Proxy",
             data_type=Argument.data_type_string,
             required_on_create=True,
             required_on_edit=True
         )
-        scheme.add_argument(port_arg)
+        scheme.add_argument(proxy_port_arg)
+
+        proxy_port_arg = Argument(
+            name="proxy_port",
+            title="Proxy",
+            data_type=Argument.data_type_string,
+            required_on_create=True,
+            required_on_edit=True
+        )
+        scheme.add_argument(proxy_port_arg)
 
         start_date_arg = Argument(
             name="start_date",
@@ -74,7 +83,8 @@ class MyScript(Script):
         api_key       = validation_definition.parameters["api_key"]
         secret_key    = validation_definition.parameters["secret_key"]
         api_host      = validation_definition.parameters["api_host"]
-        proxy         = validation_definition.parameters["proxy"]
+        proxy_host    = validation_definition.parameters["proxy_host"]
+        proxy_port    = validation_definition.parameters["proxy_port"]
 
         if secret_key == self.MASK:
             secret_key = self.get_password(session_key, api_key)
@@ -83,7 +93,9 @@ class MyScript(Script):
                 start_date = validation_definition.parameters["start_date"]
                 validate.startdate(start_date)
 
-            validate.halo_session(api_key, secret_key, api_host)
+            validate.halo_session(api_key, secret_key, api_host,
+                                  proxy_host=proxy_host,
+                                  proxy_port=proxy_port)
         except Exception as e:
             raise Exception, "Something did not go right: %s" % str(e)
 
@@ -104,7 +116,7 @@ class MyScript(Script):
         except Exception as e:
             raise Exception, "An error occurred updating credentials. Please ensure your user account has admin_all_objects and/or list_storage_passwords capabilities. Details: %s" % str(e)
 
-    def mask_password(self, session_key, api_key, api_host, proxy, start_date):
+    def mask_password(self, session_key, api_key, api_host, proxy_host, proxy_port, start_date):
         try:
             args = {'token':session_key}
             service = client.connect(**args)
@@ -115,7 +127,8 @@ class MyScript(Script):
                 "api_key": api_key,
                 "secret_key": self.MASK,
                 "api_host": api_host,
-                "proxy": proxy,
+                "proxy_host": proxy_host,
+                "proxy_port": proxy_port,
                 "start_date": start_date
             }
             item.update(**kwargs).refresh()
@@ -147,7 +160,8 @@ class MyScript(Script):
         api_key     = self.input_items["api_key"]
         secret_key  = self.input_items['secret_key']
         api_host    = self.input_items['api_host']
-        proxy    = self.input_items['proxy']
+        proxy_host  = self.input_items['proxy_host']
+        proxy_port  = self.input_items['proxy_port']
         event_id_exist = True
         first_batch = True
         self.USERNAME = api_key
@@ -160,7 +174,7 @@ class MyScript(Script):
             # If the password is not masked, mask it.
             if secret_key != self.MASK:
                 self.encrypt_password(api_key, secret_key, session_key)
-                self.mask_password(session_key, api_key, api_host, proxy, start_date)
+                self.mask_password(session_key, api_key, api_host, proxy_host, proxy_port, start_date)
 
             self.CLEAR_PASSWORD = self.get_password(session_key, api_key)
         except Exception as e:
@@ -168,7 +182,10 @@ class MyScript(Script):
 
         ew.log("INFO", "Starting from %s" % (start_date))
 
-        e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host)
+        e = lib.Event(api_key, self.CLEAR_PASSWORD,
+                      api_host,
+                      proxy_host=proxy_host,
+                      proxy_port=proxy_port)
 
         end_date = start_date
         initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
