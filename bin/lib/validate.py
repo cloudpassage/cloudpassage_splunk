@@ -7,10 +7,12 @@ import datetime
 import re
 
 
-def halo_session(api_key, secret_key, api_host=None, api_port=443):
+def halo_session(api_key, secret_key, api_host=None, **kwargs):
     session = cloudpassage.HaloSession(api_key, secret_key,
                                        api_host=api_host,
-                                       api_port=api_port)
+                                       api_port=443,
+                                       proxy_host=kwargs['proxy_host'],
+                                       proxy_port=kwargs['proxy_port'])
     api = cloudpassage.HttpHelper(session)
     try:
         api.get('/v1/servers')

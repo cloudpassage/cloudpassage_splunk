@@ -51,19 +51,19 @@ class MyScript(Script):
 
         proxy_host_arg = Argument(
             name="proxy_host",
-            title="Proxy",
+            title="Proxy Host",
             data_type=Argument.data_type_string,
-            required_on_create=True,
-            required_on_edit=True
+            required_on_create=False,
+            required_on_edit=False
         )
-        scheme.add_argument(proxy_port_arg)
+        scheme.add_argument(proxy_host_arg)
 
         proxy_port_arg = Argument(
             name="proxy_port",
-            title="Proxy",
+            title="Proxy Port",
             data_type=Argument.data_type_string,
-            required_on_create=True,
-            required_on_edit=True
+            required_on_create=False,
+            required_on_edit=False
         )
         scheme.add_argument(proxy_port_arg)
 
@@ -83,8 +83,8 @@ class MyScript(Script):
         api_key       = validation_definition.parameters["api_key"]
         secret_key    = validation_definition.parameters["secret_key"]
         api_host      = validation_definition.parameters["api_host"]
-        proxy_host    = validation_definition.parameters["proxy_host"]
-        proxy_port    = validation_definition.parameters["proxy_port"]
+        proxy_host    = None
+        proxy_port    = None
 
         if secret_key == self.MASK:
             secret_key = self.get_password(session_key, api_key)
@@ -92,6 +92,10 @@ class MyScript(Script):
             if validation_definition.parameters["start_date"]:
                 start_date = validation_definition.parameters["start_date"]
                 validate.startdate(start_date)
+            if validation_definition.parameters["proxy_host"]:
+                proxy_host = validation_definition.parameters["proxy_host"]
+            if validation_definition.parameters["proxy_port"]:
+                proxy_port = validation_definition.parameters["proxy_port"]
 
             validate.halo_session(api_key, secret_key, api_host,
                                   proxy_host=proxy_host,
@@ -160,11 +164,18 @@ class MyScript(Script):
         api_key     = self.input_items["api_key"]
         secret_key  = self.input_items['secret_key']
         api_host    = self.input_items['api_host']
-        proxy_host  = self.input_items['proxy_host']
-        proxy_port  = self.input_items['proxy_port']
         event_id_exist = True
         first_batch = True
         self.USERNAME = api_key
+
+        try:
+            proxy_host = self.input_items['proxy_host']
+        except:
+            proxy_host = None
+        try:
+            proxy_port = self.input_items['proxy_port']
+        except:
+            proxy_port = None
 
         state_store = lib.FileStateStore(inputs.metadata, self.input_name)
         checkpoint = state_store.get_state("created_at")
@@ -182,9 +193,7 @@ class MyScript(Script):
 
         ew.log("INFO", "Starting from %s" % (start_date))
         e = lib.Event(api_key, self.CLEAR_PASSWORD,
-                      api_host, ew
-                      proxy_host=proxy_host,
-                      proxy_port=proxy_port)
+                      api_host, ew)
 
         end_date = start_date
         initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
