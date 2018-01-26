@@ -52,6 +52,7 @@ class HaloSession(object):
         self.api_host = 'api.cloudpassage.com'
         self.api_port = 443
         # self.sdk_version = utility.get_sdk_version()
+        # self.sdk_version_string = "Halo-Python-SDK/%s" % self.sdk_version
         self.sdk_version_string = "Halo-Python-SDK/%"
         self.user_agent = ''
         self.integration_string = ''
@@ -61,12 +62,16 @@ class HaloSession(object):
         self.auth_scope = None
         self.proxy_host = None
         self.proxy_port = None
+        self.proxy_struct = None
+
         self.lock = threading.RLock()
         # Override defaults for proxy
         if "proxy_host" in kwargs:
             self.proxy_host = kwargs["proxy_host"]
             if "proxy_port" in kwargs:
                 self.proxy_port = kwargs["proxy_port"]
+            self.proxy_struct = self.build_proxy_struct(self.proxy_host, self.proxy_port)
+
         # Override defaults for api host and port
         if "api_host" in kwargs:
             self.api_host = kwargs["api_host"]
@@ -172,9 +177,9 @@ class HaloSession(object):
         """This constructs the auth header, required for all API interaction.
 
         """
-
         authstring = "Bearer " + self.auth_token
         header = {"Authorization": authstring,
                   "Content-Type": "application/json",
-                  "User-Agent": self.user_agent}
+                  "User-Agent": self.user_agent,
+                  "Accept-Encoding": "gzip"}
         return header

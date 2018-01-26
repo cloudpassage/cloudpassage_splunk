@@ -97,7 +97,7 @@ class MyScript(Script):
             if validation_definition.parameters["proxy_port"]:
                 proxy_port = validation_definition.parameters["proxy_port"]
 
-            validate.halo_session(api_key, secret_key, api_host,
+            validate.halo_session(api_key, secret_key,
                                   proxy_host=proxy_host,
                                   proxy_port=proxy_port)
         except Exception as e:
@@ -198,9 +198,9 @@ class MyScript(Script):
                       proxy_port=proxy_port)
 
         end_date = start_date
-        initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
-        while event_id_exist:
-            try:
+        try:
+            initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
+            while event_id_exist:
                 batched = e.batch(end_date)
                 start_date, end_date = e.loop_date(batched, end_date)
                 if e.id_exists_check(batched, initial_event_id):
@@ -214,8 +214,8 @@ class MyScript(Script):
                 if batched:
                     self.send_arr_events(ew, self.input_name, state_store, batched)
                     ew.log("INFO", "cphalo: saved events from %s to %s" % (start_date, end_date))
-            except Exception as e:
-                ew.log("ERROR", "Error: %s" % str(e))
+        except Exception as e:
+            ew.log("ERROR", "Error: %s" % str(e))
 
 
 

@@ -7,9 +7,9 @@ import datetime
 import re
 
 
-def halo_session(api_key, secret_key, api_host=None, **kwargs):
+def halo_session(api_key, secret_key, **kwargs):
     session = cloudpassage.HaloSession(api_key, secret_key,
-                                       api_host=api_host,
+                                       api_host=kwargs['api_host'],
                                        api_port=443,
                                        proxy_host=kwargs['proxy_host'],
                                        proxy_port=kwargs['proxy_port'])

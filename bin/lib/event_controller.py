@@ -39,7 +39,6 @@ class Event(object):
 
     def create_halo_session_object(self):
         session = cloudpassage.HaloSession(self.key_id, self.secret_key,
-                                           api_port=self.api_port,
                                            api_host=self.api_host,
                                            proxy_host=self.proxy_host,
                                            proxy_port=self.proxy_port)

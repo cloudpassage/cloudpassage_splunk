@@ -22,6 +22,7 @@ class HttpHelper(object):
 
     def __init__(self, connection, ew = None):
         self.connection = connection
+        self.proxies = connection.proxy_struct
         self.ew = ew
 
     def log_500(self, url, response, exception):
@@ -60,14 +61,15 @@ class HttpHelper(object):
 
         if self.connection.auth_token is None:
             self.connection.authenticate_client()
+
         prefix = self.connection.build_endpoint_prefix()
         url = prefix + endpoint
         headers = self.connection.build_header()
         if "params" in kwargs:
-            response = requests.get(url, headers=headers,
+            response = requests.get(url, headers=headers, proxies=self.proxies,
                                     params=kwargs["params"])
         else:
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, proxies=self.proxies)
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
         if success is True:
@@ -78,10 +80,10 @@ class HttpHelper(object):
             self.connection.authenticate_client()
             headers = self.connection.build_header()
             if "params" in kwargs:
-                response = requests.get(url, headers=headers,
+                response = requests.get(url, headers=headers, proxies=self.proxies,
                                         params=kwargs["params"])
             else:
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, proxies=self.proxies)
             success, exception = utility.parse_status(url,
                                                       response.status_code,
                                                       response.text)
@@ -92,12 +94,13 @@ class HttpHelper(object):
             if "params" in kwargs:
                 success, response, exception = Retry().get(url,
                                                            headers,
+                                                           self.proxies,
                                                            kwargs["params"])
                 self.log_500(url, response, exception)
                 if success is True:
                     return response.json()
             else:
-                success, response, exception = Retry().get(url, headers)
+                success, response, exception = Retry().get(url, headers, self.proxies)
                 self.log_500(url, response, exception)
                 if success is True:
                     return response.json()
@@ -200,7 +203,7 @@ class HttpHelper(object):
         prefix = self.connection.build_endpoint_prefix()
         url = prefix + endpoint
         headers = self.connection.build_header()
-        response = requests.post(url, headers=headers,
+        response = requests.post(url, headers=headers, proxies=self.proxies,
                                  data=json.dumps(reqbody))
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
@@ -211,7 +214,7 @@ class HttpHelper(object):
         if response.status_code == 401:
             self.connection.authenticate_client()
             headers = self.connection.build_header()
-            response = requests.post(url, headers=headers,
+            response = requests.post(url, headers=headers, proxies=self.proxies,
                                      data=json.dumps(reqbody))
             success, exception = utility.parse_status(url,
                                                       response.status_code,
@@ -220,7 +223,7 @@ class HttpHelper(object):
                 return response.json()
 
         if response.status_code >= 500:
-            success, response, exception = Retry().post(url, headers, reqbody)
+            success, response, exception = Retry().post(url, headers, self.proxies, reqbody)
             self.log_500(url, response, exception)
             if success is True:
                 return response.json()
@@ -248,7 +251,7 @@ class HttpHelper(object):
         prefix = self.connection.build_endpoint_prefix()
         url = prefix + endpoint
         headers = self.connection.build_header()
-        response = requests.put(url, headers=headers,
+        response = requests.put(url, headers=headers, proxies=self.proxies,
                                 data=json.dumps(reqbody))
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
@@ -257,7 +260,7 @@ class HttpHelper(object):
             if response.status_code == 401:
                 self.connection.authenticate_client()
                 headers = self.connection.build_header()
-                response = requests.put(url, headers=headers,
+                response = requests.put(url, headers=headers, proxies=self.proxies,
                                         data=json.dumps(reqbody))
                 success, exception = utility.parse_status(url,
                                                           response.status_code,
@@ -268,6 +271,7 @@ class HttpHelper(object):
             if response.status_code >= 500:
                 success, response, exception = Retry().put(url,
                                                            headers,
+                                                           self.proxies,
                                                            reqbody)
                 self.log_500(url, response, exception)
                 if success is True:
@@ -308,10 +312,10 @@ class HttpHelper(object):
         url = prefix + endpoint
         headers = self.connection.build_header()
         if "params" in kwargs:
-            response = requests.delete(url, headers=headers,
+            response = requests.delete(url, headers=headers, proxies=self.proxies,
                                        params=kwargs["params"])
         else:
-            response = requests.delete(url, headers=headers)
+            response = requests.delete(url, headers=headers, proxies=self.proxies)
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
         if success is False:
@@ -319,7 +323,7 @@ class HttpHelper(object):
             if response.status_code == 401:
                 self.connection.authenticate_client()
                 headers = self.connection.build_header()
-                response = requests.delete(url, headers=headers)
+                response = requests.delete(url, headers=headers, proxies=self.proxies)
                 success, exception = utility.parse_status(url,
                                                           response.status_code,
                                                           response.text)
@@ -327,7 +331,7 @@ class HttpHelper(object):
                     return response.json()
 
             elif response.status_code >= 500:
-                success, response, exception = Retry().delete(url, headers)
+                success, response, exception = Retry().delete(url, headers, self.proxies)
                 self.log_500(url, response, exception)
                 if success is True:
                     return response.json()
