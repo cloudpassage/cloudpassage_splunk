@@ -27,10 +27,10 @@ class Event(object):
         secret_key: Halo API secret key
     """
 
-    def __init__(self, key_id, secret_key, api_host, api_port):
+    def __init__(self, key_id, secret_key, api_host):
         self.event_id_exist = True
         self.api_host = api_host
-        self.api_port = api_port
+        self.api_port = 443
         self.key_id = key_id
         self.secret_key = secret_key
 
