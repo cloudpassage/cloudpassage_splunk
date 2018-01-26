@@ -173,19 +173,24 @@ class MyScript(Script):
         end_date = start_date
         initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
         while event_id_exist:
-            batched = e.batch(end_date)
-            start_date, end_date = e.loop_date(batched, end_date)
-            if e.id_exists_check(batched, initial_event_id):
-                ew.log("INFO", "cphalo: detected initial event id match. Saving as final batch.")
-                event_id_exist = False
+            try:
+                batched = e.batch(end_date)
+                start_date, end_date = e.loop_date(batched, end_date)
+                if e.id_exists_check(batched, initial_event_id):
+                    ew.log("INFO", "cphalo: detected initial event id match. Saving as final batch.")
+                    event_id_exist = False
 
-            if checkpoint and first_batch:
-                first_batch = False
-                batched.pop(0)
+                if checkpoint and first_batch:
+                    first_batch = False
+                    batched.pop(0)
 
-            if batched:
-                self.send_arr_events(ew, self.input_name, state_store, batched)
-                ew.log("INFO", "cphalo: saved events from %s to %s" % (start_date, end_date))
+                if batched:
+                    self.send_arr_events(ew, self.input_name, state_store, batched)
+                    ew.log("INFO", "cphalo: saved events from %s to %s" % (start_date, end_date))
+            except Exception as e:
+                ew.log("ERROR", "Error: %s" % str(e))
+
+
 
 if __name__ == "__main__":
     exitcode = MyScript().run(sys.argv)
