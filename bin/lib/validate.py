@@ -15,7 +15,7 @@ def halo_session(api_key, secret_key, api_host=None, **kwargs):
                                        proxy_port=kwargs['proxy_port'])
     api = cloudpassage.HttpHelper(session)
     try:
-        api.get('/v1/servers')
+        api.get('/v1/servers?per_page=1')
     except Exception as e :
         raise Exception, e
     return True

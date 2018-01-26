@@ -193,7 +193,9 @@ class MyScript(Script):
 
         ew.log("INFO", "Starting from %s" % (start_date))
         e = lib.Event(api_key, self.CLEAR_PASSWORD,
-                      api_host, ew)
+                      api_host, ew,
+                      proxy_host=proxy_host,
+                      proxy_port=proxy_port)
 
         end_date = start_date
         initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]

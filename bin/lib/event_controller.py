@@ -27,17 +27,22 @@ class Event(object):
         secret_key: Halo API secret key
     """
 
-    def __init__(self, key_id, secret_key, api_host, ew):
+    def __init__(self, key_id, secret_key, api_host, ew, **kwargs):
         self.event_id_exist = True
         self.api_host = api_host
         self.api_port = 443
         self.key_id = key_id
         self.secret_key = secret_key
         self.ew = ew
+        self.proxy_host = kwargs['proxy_host']
+        self.proxy_port = kwargs['proxy_port']
 
     def create_halo_session_object(self):
         session = cloudpassage.HaloSession(self.key_id, self.secret_key,
-                                           api_port=self.api_port, api_host=self.api_host)
+                                           api_port=self.api_port,
+                                           api_host=self.api_host,
+                                           proxy_host=self.proxy_host,
+                                           proxy_port=self.proxy_port)
         return session
 
     def get(self, per_page, date, page):
