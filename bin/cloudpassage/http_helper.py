@@ -1,11 +1,12 @@
 """HttpHelper class.  Primary-level object, facilitates
 GET / POST / PUT / DELETE requests against API.
 """
-import sys
+
 import json
 import urlparse
 from cloudpassage.exceptions import CloudPassageValidation
 import cloudpassage.utility as utility
+from cloudpassage.retry import Retry
 import requests
 
 
@@ -19,8 +20,12 @@ class HttpHelper(object):
 
     """
 
-    def __init__(self, connection):
+    def __init__(self, connection, ew = None):
         self.connection = connection
+        self.ew = ew
+
+    def log_500(self, url, response, exception):
+        self.ew.log("WARN", "cphalo: request on %s responded with %s, exception is: %s" % (url, response, exception))
 
     def get(self, endpoint, **kwargs):
         """This method performs a GET against Halo's API.
@@ -82,6 +87,21 @@ class HttpHelper(object):
                                                       response.text)
             if success is True:
                 return response.json()
+
+        if response.status_code >= 500:
+            if "params" in kwargs:
+                success, response, exception = Retry().get(url,
+                                                           headers,
+                                                           kwargs["params"])
+                self.log_500(url, response, exception)
+                if success is True:
+                    return response.json()
+            else:
+                success, response, exception = Retry().get(url, headers)
+                self.log_500(url, response, exception)
+                if success is True:
+                    return response.json()
+
         raise exception
 
     def get_paginated(self, endpoint, key, max_pages, **kwargs):
@@ -184,21 +204,28 @@ class HttpHelper(object):
                                  data=json.dumps(reqbody))
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
-        if success is False:
-            # If we get a 401, it could be an expired key.  We retry once.
-            if response.status_code == 401:
-                self.connection.authenticate_client()
-                headers = self.connection.build_header()
-                response = requests.post(url, headers=headers,
-                                         data=json.dumps(reqbody))
-                success, exception = utility.parse_status(url,
-                                                          response.status_code,
-                                                          response.text)
-                if success is True:
-                    return response.json()
-            raise exception
-        else:
+        if success is True:
             return response.json()
+
+        # If we get a 401, it could be an expired key.  We retry once.
+        if response.status_code == 401:
+            self.connection.authenticate_client()
+            headers = self.connection.build_header()
+            response = requests.post(url, headers=headers,
+                                     data=json.dumps(reqbody))
+            success, exception = utility.parse_status(url,
+                                                      response.status_code,
+                                                      response.text)
+            if success is True:
+                return response.json()
+
+        if response.status_code >= 500:
+            success, response, exception = Retry().post(url, headers, reqbody)
+            self.log_500(url, response, exception)
+            if success is True:
+                return response.json()
+
+        raise exception
 
     def put(self, endpoint, reqbody):
         """This method performs a PUT against Halo's API.
@@ -225,7 +252,6 @@ class HttpHelper(object):
                                 data=json.dumps(reqbody))
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
-        print >> sys.stderr, url, response.status_code
         if success is False:
             # If we get a 401, it could be an expired key.  We retry once.
             if response.status_code == 401:
@@ -238,6 +264,15 @@ class HttpHelper(object):
                                                           response.text)
                 if success is True:
                     return response.json()
+
+            if response.status_code >= 500:
+                success, response, exception = Retry().put(url,
+                                                           headers,
+                                                           reqbody)
+                self.log_500(url, response, exception)
+                if success is True:
+                    return response.json()
+
             raise exception
         else:
             # Sometimes we don't get json back...
@@ -290,6 +325,13 @@ class HttpHelper(object):
                                                           response.text)
                 if success is True:
                     return response.json()
+
+            elif response.status_code >= 500:
+                success, response, exception = Retry().delete(url, headers)
+                self.log_500(url, response, exception)
+                if success is True:
+                    return response.json()
+
             raise exception
         else:
             # Sometimes we don't get json back...

@@ -168,7 +168,7 @@ class MyScript(Script):
 
         ew.log("INFO", "Starting from %s" % (start_date))
 
-        e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, api_port)
+        e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, api_port, ew)
 
         end_date = start_date
         initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
