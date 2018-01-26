@@ -98,6 +98,7 @@ class MyScript(Script):
                 proxy_port = validation_definition.parameters["proxy_port"]
 
             validate.halo_session(api_key, secret_key,
+                                  api_host=api_host,
                                   proxy_host=proxy_host,
                                   proxy_port=proxy_port)
         except Exception as e:
