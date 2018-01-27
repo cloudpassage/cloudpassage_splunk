@@ -66,10 +66,10 @@ class HaloSession(object):
 
         self.lock = threading.RLock()
         # Override defaults for proxy
-        if "proxy_host" in kwargs:
+        if kwargs["proxy_host"] and kwargs["proxy_port"]:
             self.proxy_host = kwargs["proxy_host"]
-            if "proxy_port" in kwargs:
-                self.proxy_port = kwargs["proxy_port"]
+            self.proxy_port = kwargs["proxy_port"]
+
             self.proxy_struct = self.build_proxy_struct(self.proxy_host, self.proxy_port)
 
         # Override defaults for api host and port
