@@ -105,7 +105,7 @@ class HaloSession(object):
         return ret_struct
 
     @classmethod
-    def get_auth_token(cls, endpoint, headers):
+    def get_auth_token(cls, endpoint, headers, proxies=None):
         """This method takes endpoint and header info, and returns the
         oauth token and scope.
 
@@ -120,19 +120,25 @@ class HaloSession(object):
 
         token = None
         scope = None
-        resp = requests.post(endpoint, headers=headers)
-        if resp.status_code == 200:
-            auth_resp_json = resp.json()
-            token = auth_resp_json["access_token"]
-            try:
-                scope = auth_resp_json["scope"]
-            except KeyError:
-                scope = None
-        if resp.status_code == 401:
-            token = "BAD"
-        return token, scope
+        try:
+            resp = requests.post(endpoint,
+                                 headers=headers,
+                                 proxies=proxies,
+                                 timeout=5)
+            if resp.status_code == 200:
+                auth_resp_json = resp.json()
+                token = auth_resp_json["access_token"]
+                try:
+                    scope = auth_resp_json["scope"]
+                except KeyError:
+                    scope = None
+            if resp.status_code == 401:
+                token = "BAD"
+            return token, scope
+        except Exception as e:
+            raise e
 
-    def authenticate_client(self):
+    def authenticate_client(self, proxies=None):
         """This method attempts to set an OAuth token
 
         Call this method and it will use the API key and secret
@@ -149,7 +155,7 @@ class HaloSession(object):
         headers = {"Authorization": str("Basic " + encoded)}
         max_tries = 5
         for _ in range(max_tries):
-            token, scope = self.get_auth_token(endpoint, headers)
+            token, scope = self.get_auth_token(endpoint, headers, proxies)
             if token == "BAD":
                 # Add message for IP restrictions
                 exc_msg = "Invalid credentials- can not obtain session token."

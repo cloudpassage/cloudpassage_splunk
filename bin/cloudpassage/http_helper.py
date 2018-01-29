@@ -24,6 +24,9 @@ class HttpHelper(object):
         self.connection = connection
         self.proxies = connection.proxy_struct
         self.ew = ew
+        self.ew.log("INFO", "proxy info is %s" % (self.proxies))
+
+        self.timeout = 5
 
     def log_500(self, url, response, exception):
         self.ew.log("WARN", "cphalo: request on %s responded with %s, exception is: %s" % (url, response, exception))
@@ -60,16 +63,22 @@ class HttpHelper(object):
         """
 
         if self.connection.auth_token is None:
-            self.connection.authenticate_client()
+            self.connection.authenticate_client(self.proxies)
 
         prefix = self.connection.build_endpoint_prefix()
         url = prefix + endpoint
         headers = self.connection.build_header()
         if "params" in kwargs:
-            response = requests.get(url, headers=headers, proxies=self.proxies,
+            response = requests.get(url,
+                                    headers=headers,
+                                    proxies=self.proxies,
+                                    timeout=self.timeout,
                                     params=kwargs["params"])
         else:
-            response = requests.get(url, headers=headers, proxies=self.proxies)
+            response = requests.get(url,
+                                    headers=headers,
+                                    proxies=self.proxies,
+                                    timeout=self.timeout)
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
         if success is True:
@@ -77,13 +86,19 @@ class HttpHelper(object):
 
         # If we get a 401, it could be an expired key.  We retry once.
         if response.status_code == 401:
-            self.connection.authenticate_client()
+            self.connection.authenticate_client(self.proxies)
             headers = self.connection.build_header()
             if "params" in kwargs:
-                response = requests.get(url, headers=headers, proxies=self.proxies,
+                response = requests.get(url,
+                                        headers=headers,
+                                        proxies=self.proxies,
+                                        timeout=self.timeout,
                                         params=kwargs["params"])
             else:
-                response = requests.get(url, headers=headers, proxies=self.proxies)
+                response = requests.get(url,
+                                        headers=headers,
+                                        proxies=self.proxies,
+                                        timeout=self.timeout)
             success, exception = utility.parse_status(url,
                                                       response.status_code,
                                                       response.text)
@@ -203,7 +218,10 @@ class HttpHelper(object):
         prefix = self.connection.build_endpoint_prefix()
         url = prefix + endpoint
         headers = self.connection.build_header()
-        response = requests.post(url, headers=headers, proxies=self.proxies,
+        response = requests.post(url,
+                                 headers=headers,
+                                 proxies=self.proxies,
+                                 timeout=self.timeout,
                                  data=json.dumps(reqbody))
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
@@ -214,7 +232,10 @@ class HttpHelper(object):
         if response.status_code == 401:
             self.connection.authenticate_client()
             headers = self.connection.build_header()
-            response = requests.post(url, headers=headers, proxies=self.proxies,
+            response = requests.post(url,
+                                     headers=headers,
+                                     proxies=self.proxies,
+                                     timeout=self.timeout,
                                      data=json.dumps(reqbody))
             success, exception = utility.parse_status(url,
                                                       response.status_code,
@@ -223,7 +244,10 @@ class HttpHelper(object):
                 return response.json()
 
         if response.status_code >= 500:
-            success, response, exception = Retry().post(url, headers, self.proxies, reqbody)
+            success, response, exception = Retry().post(url,
+                                                        headers,
+                                                        self.proxies,
+                                                        reqbody)
             self.log_500(url, response, exception)
             if success is True:
                 return response.json()
@@ -251,8 +275,12 @@ class HttpHelper(object):
         prefix = self.connection.build_endpoint_prefix()
         url = prefix + endpoint
         headers = self.connection.build_header()
-        response = requests.put(url, headers=headers, proxies=self.proxies,
+        response = requests.put(url,
+                                headers=headers,
+                                proxies=self.proxies,
+                                timeout=self.timeout,
                                 data=json.dumps(reqbody))
+
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
         if success is False:
@@ -260,8 +288,12 @@ class HttpHelper(object):
             if response.status_code == 401:
                 self.connection.authenticate_client()
                 headers = self.connection.build_header()
-                response = requests.put(url, headers=headers, proxies=self.proxies,
+                response = requests.put(url,
+                                        headers=headers,
+                                        proxies=self.proxies,
+                                        timeout=self.timeout,
                                         data=json.dumps(reqbody))
+
                 success, exception = utility.parse_status(url,
                                                           response.status_code,
                                                           response.text)
@@ -312,10 +344,16 @@ class HttpHelper(object):
         url = prefix + endpoint
         headers = self.connection.build_header()
         if "params" in kwargs:
-            response = requests.delete(url, headers=headers, proxies=self.proxies,
+            response = requests.delete(url,
+                                       headers=headers,
+                                       proxies=self.proxies,
+                                       timeout=self.timeout,
                                        params=kwargs["params"])
         else:
-            response = requests.delete(url, headers=headers, proxies=self.proxies)
+            response = requests.delete(url,
+                                       headers=headers,
+                                       proxies=self.proxies,
+                                       timeout=self.timeout)
         success, exception = utility.parse_status(url, response.status_code,
                                                   response.text)
         if success is False:
@@ -323,7 +361,10 @@ class HttpHelper(object):
             if response.status_code == 401:
                 self.connection.authenticate_client()
                 headers = self.connection.build_header()
-                response = requests.delete(url, headers=headers, proxies=self.proxies)
+                response = requests.delete(url,
+                                           headers=headers,
+                                           proxies=self.proxies,
+                                           timeout=self.timeout)
                 success, exception = utility.parse_status(url,
                                                           response.status_code,
                                                           response.text)
