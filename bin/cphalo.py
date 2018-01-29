@@ -193,8 +193,7 @@ class MyScript(Script):
             ew.log("ERROR", "Error: %s" % str(e))
 
         ew.log("INFO", "Starting from %s" % (start_date))
-        e = lib.Event(api_key, self.CLEAR_PASSWORD,
-                      api_host, ew,
+        e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host,
                       proxy_host=proxy_host,
                       proxy_port=proxy_port)
 

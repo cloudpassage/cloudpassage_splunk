@@ -11,7 +11,6 @@ import cloudpassage.utility as utility
 import cloudpassage.sanity as sanity
 from cloudpassage.exceptions import CloudPassageAuthentication
 from cloudpassage.exceptions import CloudPassageValidation
-
 import requests
 
 
@@ -124,7 +123,7 @@ class HaloSession(object):
             resp = requests.post(endpoint,
                                  headers=headers,
                                  proxies=proxies,
-                                 timeout=5)
+                                 timeout=10)
             if resp.status_code == 200:
                 auth_resp_json = resp.json()
                 token = auth_resp_json["access_token"]

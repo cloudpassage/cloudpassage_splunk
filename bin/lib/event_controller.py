@@ -27,15 +27,15 @@ class Event(object):
         secret_key: Halo API secret key
     """
 
-    def __init__(self, key_id, secret_key, api_host, ew, **kwargs):
+    def __init__(self, key_id, secret_key, api_host, **kwargs):
         self.event_id_exist = True
         self.api_host = api_host
         self.api_port = 443
         self.key_id = key_id
         self.secret_key = secret_key
-        self.ew = ew
         self.proxy_host = kwargs['proxy_host']
         self.proxy_port = kwargs['proxy_port']
+        self.session = self.create_halo_session_object()
 
     def create_halo_session_object(self):
         session = cloudpassage.HaloSession(self.key_id, self.secret_key,
@@ -47,8 +47,7 @@ class Event(object):
     def get(self, per_page, date, page):
         """HTTP GET events from Halo"""
 
-        session = self.create_halo_session_object()
-        api = cloudpassage.HttpHelper(session, self.ew)
+        api = cloudpassage.HttpHelper(self.session)
         url = "/v1/events?per_page=%s&page=%s&since=%s" % (per_page,
                                                            page,
                                                            date)
@@ -56,8 +55,8 @@ class Event(object):
 
     def latest_event(self, per_page, date, page):
         """get the latest event from Halo"""
-        session = self.create_halo_session_object()
-        api = cloudpassage.HttpHelper(session, self.ew)
+
+        api = cloudpassage.HttpHelper(self.session)
         url = "/v1/events?sort_by=created_at.desc&per_page=%s&page=%s&since=%s" % (per_page,
                                                                                    page,
                                                                                    date)

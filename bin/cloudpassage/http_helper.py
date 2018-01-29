@@ -20,16 +20,10 @@ class HttpHelper(object):
 
     """
 
-    def __init__(self, connection, ew = None):
+    def __init__(self, connection):
         self.connection = connection
         self.proxies = connection.proxy_struct
-        self.ew = ew
-        self.ew.log("INFO", "proxy info is %s" % (self.proxies))
-
-        self.timeout = 5
-
-    def log_500(self, url, response, exception):
-        self.ew.log("WARN", "cphalo: request on %s responded with %s, exception is: %s" % (url, response, exception))
+        self.timeout = 10
 
     def get(self, endpoint, **kwargs):
         """This method performs a GET against Halo's API.
@@ -111,12 +105,10 @@ class HttpHelper(object):
                                                            headers,
                                                            self.proxies,
                                                            kwargs["params"])
-                self.log_500(url, response, exception)
                 if success is True:
                     return response.json()
             else:
                 success, response, exception = Retry().get(url, headers, self.proxies)
-                self.log_500(url, response, exception)
                 if success is True:
                     return response.json()
 
@@ -248,7 +240,6 @@ class HttpHelper(object):
                                                         headers,
                                                         self.proxies,
                                                         reqbody)
-            self.log_500(url, response, exception)
             if success is True:
                 return response.json()
 
@@ -305,7 +296,6 @@ class HttpHelper(object):
                                                            headers,
                                                            self.proxies,
                                                            reqbody)
-                self.log_500(url, response, exception)
                 if success is True:
                     return response.json()
 
@@ -373,7 +363,6 @@ class HttpHelper(object):
 
             elif response.status_code >= 500:
                 success, response, exception = Retry().delete(url, headers, self.proxies)
-                self.log_500(url, response, exception)
                 if success is True:
                     return response.json()
 
