@@ -65,9 +65,9 @@ class HaloSession(object):
         self.lock = threading.RLock()
 
         # Override defaults for proxy
-        if "proxy_host" in kwargs:
+        if ("proxy_host" in kwargs) and (kwargs["proxy_host"]):
             self.proxy_host = kwargs["proxy_host"]
-            if "proxy_port" in kwargs:
+            if ("proxy_port" in kwargs) and kwargs["proxy_port"]:
                 self.proxy_port = kwargs["proxy_port"]
                 self.proxy_struct = self.build_proxy_struct(self.proxy_host, self.proxy_port)
 
@@ -87,6 +87,7 @@ class HaloSession(object):
                                          self.user_agent)
         return None
 
+
     @classmethod
     def build_proxy_struct(cls, host, port):
         """This builds a structure describing the environment's HTTP
@@ -97,11 +98,13 @@ class HaloSession(object):
         """
 
         ret_struct = {"https": ""}
-        if port is not None:
-            ret_struct["https"] = "http://" + str(host) + ":" + str(port)
+        if (host == 'None') and (port == 'None'):
+            return None
+        elif (host is None) and (port is None):
+            return None
         else:
-            ret_struct["https"] = "http://" + str(host) + ":8080"
-        return ret_struct
+            ret_struct["https"] = "http://" + str(host) + ":" + str(port)
+            return ret_struct
 
     @classmethod
     def get_auth_token(cls, endpoint, headers):
