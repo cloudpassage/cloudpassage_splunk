@@ -9,4 +9,4 @@ def get_start_date(input_items, checkpoint):
         return checkpoint
     if "start_date" in input_items:
         return input_items["start_date"]
-    return past_date(90)
+    return past_date(89)

@@ -62,14 +62,14 @@ class HaloSession(object):
         self.proxy_host = None
         self.proxy_port = None
         self.proxy_struct = None
-
         self.lock = threading.RLock()
-        # Override defaults for proxy
-        if kwargs["proxy_host"] and kwargs["proxy_port"]:
-            self.proxy_host = kwargs["proxy_host"]
-            self.proxy_port = kwargs["proxy_port"]
 
-            self.proxy_struct = self.build_proxy_struct(self.proxy_host, self.proxy_port)
+        # Override defaults for proxy
+        if "proxy_host" in kwargs:
+            self.proxy_host = kwargs["proxy_host"]
+            if "proxy_port" in kwargs:
+                self.proxy_port = kwargs["proxy_port"]
+                self.proxy_struct = self.build_proxy_struct(self.proxy_host, self.proxy_port)
 
         # Override defaults for api host and port
         if "api_host" in kwargs:
@@ -104,7 +104,7 @@ class HaloSession(object):
         return ret_struct
 
     @classmethod
-    def get_auth_token(cls, endpoint, headers, proxies=None):
+    def get_auth_token(cls, endpoint, headers):
         """This method takes endpoint and header info, and returns the
         oauth token and scope.
 
@@ -119,25 +119,19 @@ class HaloSession(object):
 
         token = None
         scope = None
-        try:
-            resp = requests.post(endpoint,
-                                 headers=headers,
-                                 proxies=proxies,
-                                 timeout=10)
-            if resp.status_code == 200:
-                auth_resp_json = resp.json()
-                token = auth_resp_json["access_token"]
-                try:
-                    scope = auth_resp_json["scope"]
-                except KeyError:
-                    scope = None
-            if resp.status_code == 401:
-                token = "BAD"
-            return token, scope
-        except Exception as e:
-            raise e
+        resp = requests.post(endpoint, headers=headers)
+        if resp.status_code == 200:
+            auth_resp_json = resp.json()
+            token = auth_resp_json["access_token"]
+            try:
+                scope = auth_resp_json["scope"]
+            except KeyError:
+                scope = None
+        if resp.status_code == 401:
+            token = "BAD"
+        return token, scope
 
-    def authenticate_client(self, proxies=None):
+    def authenticate_client(self):
         """This method attempts to set an OAuth token
 
         Call this method and it will use the API key and secret
@@ -154,7 +148,7 @@ class HaloSession(object):
         headers = {"Authorization": str("Basic " + encoded)}
         max_tries = 5
         for _ in range(max_tries):
-            token, scope = self.get_auth_token(endpoint, headers, proxies)
+            token, scope = self.get_auth_token(endpoint, headers)
             if token == "BAD":
                 # Add message for IP restrictions
                 exc_msg = "Invalid credentials- can not obtain session token."

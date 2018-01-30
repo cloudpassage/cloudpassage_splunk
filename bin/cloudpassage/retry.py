@@ -11,15 +11,21 @@ class Retry(object):
         self.success = False
         self.retries = 0
 
+    def set_proxies(self, session, proxies):
+        if proxies:
+            session.proxies = proxies
+
     def get(self, url, headers, proxies, params=None):
         while self.retries < self.max_retries and not self.success:
             time.sleep(self.retry_delays[self.retries])
             self.retries += 1
+            req = requests.session()
+            self.set_proxies(req, proxies)
+
             if params:
-                response = requests.get(url, headers=headers, proxies=proxies,
-                                        params=params)
+                response = req.get(url, headers=headers, params=params)
             else:
-                response = requests.get(url, headers=headers, proxies=proxies)
+                response = req.get(url, headers=headers)
 
             success, exception = utility.parse_status(url,
                                                       response.status_code,
@@ -27,36 +33,42 @@ class Retry(object):
 
         return success, response, exception
 
-    def put(self, url, headers, proxies, reqbody):
+    def put(self, url, headers, reqbody, proxies):
         while self.retries < self.max_retries and not self.success:
             time.sleep(self.max_retries[self.retries])
             self.retries += 1
-            response = requests.put(url, headers=headers, proxies=proxies,
-                                    data=json.dumps(reqbody))
+            req = requests.session()
+            self.set_proxies(req, proxies)
+
+            response = req.put(url, headers=headers, data=json.dumps(reqbody))
             success, exception = utility.parse_status(url,
                                                       response.status_code,
                                                       response.text)
 
         return success, response, exception
 
-    def post(self, url, headers, proxies, reqbody):
+    def post(self, url, headers, reqbody, proxies):
         while self.retries < self.max_retries and not self.success:
             time.sleep(self.retry_delays[self.retries])
             self.retries += 1
-            response = requests.post(url, headers=headers, proxies=proxies,
-                                     data=json.dumps(reqbody))
+            req = requests.session()
+            self.set_proxies(req, proxies)
 
+            response = req.post(url, headers=headers, data=json.dumps(reqbody))
             success, exception = utility.parse_status(url,
                                                       response.status_code,
                                                       response.text)
 
         return success, response, exception
 
-    def delete(self, url, proxies, headers):
+    def delete(self, url, headers, proxies):
         while self.retries < self.max_retries and not self.success:
             time.sleep(self.retry_delays[self.retries])
             self.retries += 1
-            response = requests.delete(url, headers=headers, proxies=proxies)
+            req = requests.session()
+            self.set_proxies(req, proxies)
+
+            response = req.delete(url, headers=headers)
             success, exception = utility.parse_status(url,
                                                       response.status_code,
                                                       response.text)

@@ -97,10 +97,7 @@ class MyScript(Script):
             if validation_definition.parameters["proxy_port"]:
                 proxy_port = validation_definition.parameters["proxy_port"]
 
-            validate.halo_session(api_key, secret_key,
-                                  api_host=api_host,
-                                  proxy_host=proxy_host,
-                                  proxy_port=proxy_port)
+            validate.halo_session(api_key, secret_key, api_host=api_host)
         except Exception as e:
             raise Exception, "Something did not go right: %s" % str(e)
 
@@ -168,7 +165,6 @@ class MyScript(Script):
         event_id_exist = True
         first_batch = True
         self.USERNAME = api_key
-
         try:
             proxy_host = self.input_items['proxy_host']
         except:
@@ -193,10 +189,8 @@ class MyScript(Script):
             ew.log("ERROR", "Error: %s" % str(e))
 
         ew.log("INFO", "Starting from %s" % (start_date))
-        e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host,
-                      proxy_host=proxy_host,
-                      proxy_port=proxy_port)
 
+        e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, proxy_host=proxy_host, proxy_port=proxy_port)
         end_date = start_date
         try:
             initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]

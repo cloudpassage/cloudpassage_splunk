@@ -9,10 +9,9 @@ import re
 
 def halo_session(api_key, secret_key, **kwargs):
     session = cloudpassage.HaloSession(api_key, secret_key,
-                                       api_host=kwargs['api_host'],
-                                       api_port=443,
-                                       proxy_host=kwargs['proxy_host'],
-                                       proxy_port=kwargs['proxy_port'])
+                                       api_host=kwargs["api_host"],
+                                       api_port=443)
+
     api = cloudpassage.HttpHelper(session)
     try:
         api.get('/v1/servers?per_page=1')
