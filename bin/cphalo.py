@@ -118,12 +118,12 @@ class MyScript(Script):
         except Exception as e:
             raise Exception, "An error occurred updating credentials. Please ensure your user account has admin_all_objects and/or list_storage_passwords capabilities. Details: %s" % str(e)
 
-    def mask_password(self, session_key, api_key, api_host, proxy_host, proxy_port, start_date):
+    def mask_password(self, input_name, session_key, api_key, api_host, proxy_host, proxy_port, start_date):
         try:
             args = {'token':session_key}
             service = client.connect(**args)
-            kind, input_name = self.input_name.split("://")
-            item = service.inputs.__getitem__((input_name, kind))
+            kind, name = input_name.split("://")
+            item = service.inputs.__getitem__((name, kind))
 
             kwargs = {
                 "api_key": api_key,
@@ -147,69 +147,71 @@ class MyScript(Script):
             if storage_password.username == api_key:
                 return storage_password.content.clear_password
 
-    def send_arr_events(self, ew, input_name, state_store, events):
+    def send_arr_events(self, ew, input_name, checkpoint_name, state_store, events):
         for ev in events:
             event = Event()
             event.stanza = input_name
             event.data = json.dumps(ev)
 
             ew.write_event(event)
-            state_store.update_state("created_at", ev['created_at'])
+            state_store.update_state(checkpoint_name, ev['created_at'])
 
     def stream_events(self, inputs, ew):
-        self.input_name, self.input_items = inputs.inputs.popitem()
-        session_key = self._input_definition.metadata["session_key"]
-        api_key     = self.input_items["api_key"]
-        secret_key  = self.input_items['secret_key']
-        api_host    = self.input_items['api_host']
-        event_id_exist = True
-        first_batch = True
-        self.USERNAME = api_key
-        try:
-            proxy_host = self.input_items['proxy_host']
-        except:
-            proxy_host = None
-        try:
-            proxy_port = self.input_items['proxy_port']
-        except:
-            proxy_port = None
+        for input_name, input_item in inputs.inputs.iteritems():
+            ew.log("INFO", "Starting with %s" % (input_name))
+            session_key = self._input_definition.metadata["session_key"]
+            api_key     = input_item["api_key"]
+            secret_key  = input_item['secret_key']
+            api_host    = input_item['api_host']
+            event_id_exist = True
+            first_batch = True
+            self.USERNAME = api_key
+            try:
+                proxy_host = input_item['proxy_host']
+            except:
+                proxy_host = None
+            try:
+                proxy_port = input_item['proxy_port']
+            except:
+                proxy_port = None
 
-        state_store = lib.FileStateStore(inputs.metadata, self.input_name)
-        checkpoint = state_store.get_state("created_at")
-        start_date = dateUtil.get_start_date(self.input_items, checkpoint)
+            state_store = lib.FileStateStore(inputs.metadata, input_name)
+            kind, checkpoint_name = input_name.split("://")
+            checkpoint = state_store.get_state(checkpoint_name)
+            start_date = dateUtil.get_start_date(input_item, checkpoint)
 
-        try:
-            # If the password is not masked, mask it.
-            if secret_key != self.MASK:
-                self.encrypt_password(api_key, secret_key, session_key)
-                self.mask_password(session_key, api_key, api_host, proxy_host, proxy_port, start_date)
+            try:
+                # If the password is not masked, mask it.
+                if secret_key != self.MASK:
+                    self.encrypt_password(api_key, secret_key, session_key)
+                    self.mask_password(input_name, session_key, api_key, api_host, proxy_host, proxy_port, start_date)
 
-            self.CLEAR_PASSWORD = self.get_password(session_key, api_key)
-        except Exception as e:
-            ew.log("ERROR", "Error: %s" % str(e))
+                self.CLEAR_PASSWORD = self.get_password(session_key, api_key)
+            except Exception as e:
+                ew.log("ERROR", "Error: %s" % str(e))
 
-        ew.log("INFO", "Starting from %s" % (start_date))
+            ew.log("INFO", "%s Starting from %s" % (input_name, start_date))
 
-        e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, proxy_host=proxy_host, proxy_port=proxy_port)
-        end_date = start_date
-        try:
-            initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
-            while event_id_exist:
-                batched = e.batch(end_date)
-                start_date, end_date = e.loop_date(batched, end_date)
-                if e.id_exists_check(batched, initial_event_id):
-                    ew.log("INFO", "cphalo: detected initial event id match. Saving as final batch.")
-                    event_id_exist = False
+            e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, proxy_host=proxy_host, proxy_port=proxy_port)
+            end_date = start_date
+            try:
+                initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
+                while event_id_exist:
+                    batched = e.batch(end_date)
+                    start_date, end_date = e.loop_date(batched, end_date)
+                    if e.id_exists_check(batched, initial_event_id):
+                        ew.log("INFO", "cphalo: %s detected initial event id match. Saving as final batch." % (input_name))
+                        event_id_exist = False
 
-                if checkpoint and first_batch:
-                    first_batch = False
-                    batched.pop(0)
+                    if checkpoint and first_batch:
+                        first_batch = False
+                        batched.pop(0)
 
-                if batched:
-                    self.send_arr_events(ew, self.input_name, state_store, batched)
-                    ew.log("INFO", "cphalo: saved events from %s to %s" % (start_date, end_date))
-        except Exception as e:
-            ew.log("ERROR", "Error: %s" % str(e))
+                    if batched:
+                        self.send_arr_events(ew, input_name, checkpoint_name, state_store, batched)
+                        ew.log("INFO", "cphalo: %s saved events from %s to %s" % (input_name, start_date, end_date))
+            except Exception as e:
+                ew.log("ERROR", "Error: %s" % str(e))
 
 
 
