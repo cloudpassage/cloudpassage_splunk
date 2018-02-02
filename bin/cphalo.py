@@ -17,7 +17,7 @@ class MyScript(Script):
 
     def get_scheme(self):
         scheme = Scheme("CloudPassage Splunk Connector")
-        scheme.description = ("Demonstrates how to encrypt/decrypt credentials in modular inputs.")
+        scheme.description = ("CloudPassage modular inputs")
         scheme.use_external_validation = True
         scheme.streaming_mode_xml = True
         scheme.use_single_instance = False
