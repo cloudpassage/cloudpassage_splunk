@@ -102,11 +102,11 @@ class MyScript(Script):
             raise Exception, "Something did not go right: %s" % str(e)
 
     def encrypt_password(self, api_key, secret_key, session_key):
-        args = {'token':session_key}
+        args = {'token': session_key, 'app': self.APP}
         service = client.connect(**args)
 
         try:
-            # If the credential already exists, delte it.
+            # If the credential already exists, delete it.
             for storage_password in service.storage_passwords:
                 if storage_password.username == api_key:
                     service.storage_passwords.delete(username=storage_password.username)
@@ -120,7 +120,7 @@ class MyScript(Script):
 
     def mask_password(self, input_name, session_key, api_key, api_host, proxy_host, proxy_port, start_date):
         try:
-            args = {'token':session_key}
+            args = {'token': session_key, 'app': self.APP}
             service = client.connect(**args)
             kind, name = input_name.split("://")
             item = service.inputs.__getitem__((name, kind))
@@ -139,7 +139,7 @@ class MyScript(Script):
             raise Exception("Error updating inputs.conf: %s" % str(e))
 
     def get_password(self, session_key, api_key):
-        args = {'token':session_key}
+        args = {'token': session_key, 'app': self.APP}
         service = client.connect(**args)
 
         # Retrieve the password from the storage/passwords endpoint
