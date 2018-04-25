@@ -32,8 +32,6 @@ class HaloSession(object):
         Defaults to api.cloudpassage.com.
         api_port (str): Override the API HTTPS port \
         Defaults to 443.
-        proxy_host (str): Hostname or IP address of proxy
-        proxy_port (str): Port for proxy.  Ignored if proxy_host is not set
         user_agent (str): Override for UserAgent string.  We set this so that \
         we can see what tools are being used in the field and \
         set our development focus accordingly.  To override \
@@ -59,17 +57,7 @@ class HaloSession(object):
         self.secret = apisecret
         self.auth_token = None
         self.auth_scope = None
-        self.proxy_host = None
-        self.proxy_port = None
-        self.proxy_struct = None
         self.lock = threading.RLock()
-
-        # Override defaults for proxy
-        if ("proxy_host" in kwargs) and (kwargs["proxy_host"]):
-            self.proxy_host = kwargs["proxy_host"]
-            if ("proxy_port" in kwargs) and kwargs["proxy_port"]:
-                self.proxy_port = kwargs["proxy_port"]
-                self.proxy_struct = self.build_proxy_struct(self.proxy_host, self.proxy_port)
 
         # Override defaults for api host and port
         if "api_host" in kwargs:
@@ -86,25 +74,6 @@ class HaloSession(object):
             self.user_agent = "%s %s" % (self.integration_string,
                                          self.user_agent)
         return None
-
-
-    @classmethod
-    def build_proxy_struct(cls, host, port):
-        """This builds a structure describing the environment's HTTP
-        proxy requirements.
-
-        It returns a dictionary object that can be passed to the
-        requests module.
-        """
-
-        ret_struct = {"https": ""}
-        if (host == 'None') and (port == 'None'):
-            return None
-        elif (host is None) and (port is None):
-            return None
-        else:
-            ret_struct["https"] = "http://" + str(host) + ":" + str(port)
-            return ret_struct
 
     @classmethod
     def get_auth_token(cls, endpoint, headers):
@@ -138,8 +107,7 @@ class HaloSession(object):
         """This method attempts to set an OAuth token
 
         Call this method and it will use the API key and secret
-        as well as the proxy settings (if used) to authenticate
-        this HaloSession instance.
+        to authenticate this HaloSession instance.
 
         """
 
@@ -180,8 +148,10 @@ class HaloSession(object):
 
         """
         authstring = "Bearer " + self.auth_token
-        header = {"Authorization": authstring,
-                  "Content-Type": "application/json",
-                  "User-Agent": self.user_agent,
-                  "Accept-Encoding": "gzip"}
+        header = {
+            "Authorization": authstring,
+            "Content-Type": "application/json",
+            "User-Agent": self.user_agent,
+            "Accept-Encoding": "gzip"
+        }
         return header

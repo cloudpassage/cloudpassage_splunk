@@ -5,6 +5,7 @@ import json
 import splunklib.client as client
 import lib.validate as validate
 import lib.date_util as dateUtil
+import lib.proxy as proxy
 
 from splunklib.modularinput import *
 
@@ -175,6 +176,9 @@ class MyScript(Script):
             except:
                 proxy_port = None
 
+            if (proxy_host and proxy_port):
+                proxy.set_https_proxy(proxy_host, proxy_port)
+
             state_store = lib.FileStateStore(inputs.metadata, input_name)
             kind, checkpoint_name = input_name.split("://")
             checkpoint = state_store.get_state(checkpoint_name)
@@ -192,7 +196,7 @@ class MyScript(Script):
 
             ew.log("INFO", "%s Starting from %s" % (input_name, start_date))
 
-            e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, proxy_host=proxy_host, proxy_port=proxy_port)
+            e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host)
             end_date = start_date
             try:
                 initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]

@@ -33,13 +33,12 @@ class Event(object):
         self.api_port = 443
         self.key_id = key_id
         self.secret_key = secret_key
-        self.proxy_host = kwargs["proxy_host"]
-        self.proxy_port = kwargs["proxy_port"]
         self.session = self.create_halo_session_object()
 
     def create_halo_session_object(self):
-        session = cloudpassage.HaloSession(self.key_id, self.secret_key, api_host=self.api_host,
-                                           proxy_host=self.proxy_host, proxy_port=self.proxy_port)
+        session = cloudpassage.HaloSession(self.key_id,
+                                           self.secret_key,
+                                           api_host=self.api_host)
         return session
 
     def get(self, per_page, date, page):
