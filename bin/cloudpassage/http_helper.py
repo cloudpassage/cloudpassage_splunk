@@ -22,13 +22,7 @@ class HttpHelper(object):
 
     def __init__(self, connection):
         self.connection = connection
-        self.proxies = connection.proxy_struct
         self.timeout = 5
-
-    def set_proxy(self, session):
-        if self.proxies:
-            session.proxies = self.proxies
-            session.timeout = self.timeout
 
     def get(self, endpoint, **kwargs):
         """This method performs a GET against Halo's API.
@@ -68,7 +62,6 @@ class HttpHelper(object):
         url = prefix + endpoint
         headers = self.connection.build_header()
         req = requests.session()
-        self.set_proxy(req)
 
         if "params" in kwargs:
             response = req.get(url, headers=headers, params=kwargs["params"])
@@ -85,7 +78,6 @@ class HttpHelper(object):
             self.connection.authenticate_client()
             headers = self.connection.build_header()
             req = requests.session()
-            self.set_proxy(req)
 
             if "params" in kwargs:
                 response = req.get(url, headers=headers, params=kwargs["params"])
@@ -100,11 +92,11 @@ class HttpHelper(object):
 
         if response.status_code >= 500:
             if "params" in kwargs:
-                success, response, exception = Retry().get(url, headers, self.proxies, kwargs["params"])
+                success, response, exception = Retry().get(url, headers, kwargs["params"])
                 if success is True:
                     return response.json()
             else:
-                success, response, exception = Retry().get(url, headers, self.proxies)
+                success, response, exception = Retry().get(url, headers)
                 if success is True:
                     return response.json()
 
@@ -207,7 +199,6 @@ class HttpHelper(object):
         url = prefix + endpoint
         headers = self.connection.build_header()
         req = requests.session()
-        self.set_proxy(req)
 
         response = req.post(url, headers=headers, data=json.dumps(reqbody))
         success, exception = utility.parse_status(url, response.status_code,
@@ -255,7 +246,6 @@ class HttpHelper(object):
         url = prefix + endpoint
         headers = self.connection.build_header()
         req = requests.session()
-        self.set_proxy(req)
 
         response = req.put(url, headers=headers, data=json.dumps(reqbody))
         success, exception = utility.parse_status(url, response.status_code,
@@ -312,7 +302,6 @@ class HttpHelper(object):
         url = prefix + endpoint
         headers = self.connection.build_header()
         req = requests.session()
-        self.set_proxy(req)
 
         if "params" in kwargs:
             response = req.delete(url, headers=headers, params=kwargs["params"])
