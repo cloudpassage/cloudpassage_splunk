@@ -6,14 +6,17 @@ import cloudpassage.utility as utility
 
 class Retry(object):
     def __init__(self):
-        self.max_retries = 5
-        self.retry_delays = [2, 8, 15, 45, 90]
+        self.max_retries = 50
+        self.retry_delay = 60
         self.success = False
         self.retries = 0
 
+    def delay(self):
+        time.sleep(self.retry_delay)
+
     def get(self, url, headers, params=None):
         while self.retries < self.max_retries and not self.success:
-            time.sleep(self.retry_delays[self.retries])
+            self.delay()
             self.retries += 1
             req = requests.session()
 
@@ -30,7 +33,7 @@ class Retry(object):
 
     def put(self, url, headers, reqbody):
         while self.retries < self.max_retries and not self.success:
-            time.sleep(self.max_retries[self.retries])
+            self.delay()
             self.retries += 1
             req = requests.session()
 
@@ -43,7 +46,7 @@ class Retry(object):
 
     def post(self, url, headers, reqbody):
         while self.retries < self.max_retries and not self.success:
-            time.sleep(self.retry_delays[self.retries])
+            self.delay()
             self.retries += 1
             req = requests.session()
 
@@ -56,7 +59,7 @@ class Retry(object):
 
     def delete(self, url, headers):
         while self.retries < self.max_retries and not self.success:
-            time.sleep(self.retry_delays[self.retries])
+            self.delay()
             self.retries += 1
             req = requests.session()
 
