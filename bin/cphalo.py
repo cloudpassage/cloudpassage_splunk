@@ -176,7 +176,8 @@ class MyScript(Script):
             except:
                 proxy_port = None
 
-            if (proxy_host and proxy_port):
+            if validate.optional_proxy_values(proxy_host, proxy_port):
+                ew.log("INFO", "Setting proxy values %s:%s" % (proxy_host, proxy_port))
                 proxy.set_https_proxy(proxy_host, proxy_port)
 
             state_store = lib.FileStateStore(inputs.metadata, input_name)
