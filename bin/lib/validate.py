@@ -53,3 +53,13 @@ def startdate(date):
     validate_time_range(date)
     return True
 
+def page_size(per_page):
+    """validate per_page range"""
+    min_per_page = 1
+    max_per_page = 500
+    allowed_range = range(min_per_page, max_per_page + 1)
+
+    if int(per_page) not in allowed_range:
+        raise ValueError("%s is invalid. Size must be between %s and %s" % (per_page,
+                                                                            min_per_page,
+                                                                            max_per_page))

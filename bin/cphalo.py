@@ -77,6 +77,15 @@ class MyScript(Script):
         )
         scheme.add_argument(start_date_arg)
 
+        per_page_arg = Argument(
+            name="per_page",
+            title="Number of events returned per Halo API call. (Max is 500)",
+            data_type=Argument.data_type_number,
+            required_on_create=True,
+            required_on_edit=True
+        )
+        scheme.add_argument(per_page_arg)
+
         return scheme
 
     def validate_input(self, validation_definition):
@@ -84,6 +93,7 @@ class MyScript(Script):
         api_key       = validation_definition.parameters["api_key"]
         secret_key    = validation_definition.parameters["secret_key"]
         api_host      = validation_definition.parameters["api_host"]
+        per_page      = validation_definition.parameters["per_page"]
         proxy_host    = None
         proxy_port    = None
 
@@ -99,6 +109,7 @@ class MyScript(Script):
                 proxy_port = validation_definition.parameters["proxy_port"]
 
             validate.halo_session(api_key, secret_key, api_host=api_host)
+            validate.page_size(per_page)
         except Exception as e:
             raise Exception, "Something did not go right: %s" % str(e)
 
@@ -119,7 +130,7 @@ class MyScript(Script):
         except Exception as e:
             raise Exception, "An error occurred updating credentials. Please ensure your user account has admin_all_objects and/or list_storage_passwords capabilities. Details: %s" % str(e)
 
-    def mask_password(self, input_name, session_key, api_key, api_host, proxy_host, proxy_port, start_date):
+    def mask_password(self, input_name, session_key, api_key, api_host, proxy_host, proxy_port, start_date, per_page):
         try:
             args = {'token': session_key, 'app': self.APP}
             service = client.connect(**args)
@@ -132,7 +143,8 @@ class MyScript(Script):
                 "api_host": api_host,
                 "proxy_host": proxy_host,
                 "proxy_port": proxy_port,
-                "start_date": start_date
+                "start_date": start_date,
+                "per_page": per_page
             }
             item.update(**kwargs).refresh()
 
@@ -164,9 +176,11 @@ class MyScript(Script):
             api_key     = input_item["api_key"]
             secret_key  = input_item['secret_key']
             api_host    = input_item['api_host']
+            per_page    = input_item['per_page']
             event_id_exist = True
             first_batch = True
             self.USERNAME = api_key
+
             try:
                 proxy_host = input_item['proxy_host']
             except:
@@ -189,18 +203,21 @@ class MyScript(Script):
                 # If the password is not masked, mask it.
                 if secret_key != self.MASK:
                     self.encrypt_password(api_key, secret_key, session_key)
-                    self.mask_password(input_name, session_key, api_key, api_host, proxy_host, proxy_port, start_date)
+                    self.mask_password(input_name, session_key,
+                                       api_key, api_host,
+                                       proxy_host, proxy_port,
+                                       start_date, per_page)
 
                 self.CLEAR_PASSWORD = self.get_password(session_key, api_key)
             except Exception as e:
                 ew.log("ERROR", "Error: %s" % str(e))
 
-            ew.log("INFO", "%s Starting from %s" % (input_name, start_date))
+            ew.log("INFO", "%s Starting from %s with page size = %s" % (input_name, start_date, per_page))
 
-            e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host)
+            e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, per_page=per_page)
             end_date = start_date
             try:
-                initial_event_id = e.latest_event("1", "", "1")["events"][0]["id"]
+                initial_event_id = e.latest_event()["events"][0]["id"]
                 while event_id_exist:
                     batched = e.batch(end_date)
                     start_date, end_date = e.loop_date(batched, end_date)
