@@ -34,6 +34,7 @@ class Event(object):
         self.key_id = key_id
         self.secret_key = secret_key
         self.session = self.create_halo_session_object()
+        self.per_page = kwargs["per_page"]
 
     def create_halo_session_object(self):
         session = cloudpassage.HaloSession(self.key_id,
@@ -41,22 +42,20 @@ class Event(object):
                                            api_host=self.api_host)
         return session
 
-    def get(self, per_page, date, page):
+    def get(self, date, page):
         """HTTP GET events from Halo"""
 
         api = cloudpassage.HttpHelper(self.session)
-        url = "/v1/events?per_page=%s&page=%s&since=%s" % (per_page,
+        url = "/v1/events?per_page=%s&page=%s&since=%s" % (self.per_page,
                                                            page,
                                                            date)
         return api.get(url)
 
-    def latest_event(self, per_page, date, page):
+    def latest_event(self):
         """get the latest event from Halo"""
 
         api = cloudpassage.HttpHelper(self.session)
-        url = "/v1/events?sort_by=created_at.desc&per_page=%s&page=%s&since=%s" % (per_page,
-                                                                                   page,
-                                                                                   date)
+        url = "/v1/events?sort_by=created_at.desc&per_page=1&page=1"
         return api.get(url)
 
     def interrupt_handler(self, signum, frame):
@@ -73,11 +72,10 @@ class Event(object):
         """multiprocessing to get all the events"""
         batched = []
         paginations = list(range(1, settings.pagination_limit() + 1))
-        per_page = str(settings.per_page())
 
         try:
             for page in paginations:
-                data = self.get(per_page, date, page)
+                data = self.get(date, page)
                 batched.extend(data["events"])
             return batched
         except KeyboardInterrupt:
@@ -116,14 +114,3 @@ class Event(object):
         start_date = sorted_data[0]["created_at"]
         end_date = self.get_end_date(sorted_data, end_date)
         return start_date, end_date
-
-    def retrieve_events(self, checkpoint_stamp):
-        """retrieve events"""
-        end_date = checkpoint_stamp
-        initial_event_id = self.latest_event("1", "", "1")["events"][0]["id"]
-        while self.event_id_exist:
-            batched = self.batch(end_date)
-            start_date, end_date = self.loop_date(batched, end_date)
-            if self.id_exists_check(batched, initial_event_id):
-                self.event_id_exist = False
-                return self.event_id_exist

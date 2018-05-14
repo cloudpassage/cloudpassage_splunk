@@ -40,8 +40,26 @@ def validate_time_range(date):
     if date_parsed < time_range:
         raise ValueError(date + " is out of 90 days data retention range")
 
+def optional_proxy_values(proxy_host, proxy_port):
+    if (proxy_host == 'None') or (proxy_port == 'None'):
+        return False
+    elif (proxy_host is None) or (proxy_port is None):
+        return False
+    else:
+        return True
+
 def startdate(date):
     validate_time(date)
     validate_time_range(date)
     return True
 
+def page_size(per_page):
+    """validate per_page range"""
+    min_per_page = 1
+    max_per_page = 500
+    allowed_range = range(min_per_page, max_per_page + 1)
+
+    if int(per_page) not in allowed_range:
+        raise ValueError("%s is invalid. Size must be between %s and %s" % (per_page,
+                                                                            min_per_page,
+                                                                            max_per_page))
