@@ -6,9 +6,9 @@ import os
 import signal
 import json
 from functools import partial
+from splunklib.modularinput import *
 import settings as settings
 import cloudpassage
-
 
 def _pickle_method(message):
     if message.im_self is None:
@@ -19,7 +19,7 @@ def _pickle_method(message):
 copy_reg.pickle(types.MethodType, _pickle_method)
 
 
-class Event(object):
+class EventController(object):
     """Initializing Event
 
         Args:
@@ -35,6 +35,7 @@ class Event(object):
         self.secret_key = secret_key
         self.session = self.create_halo_session_object()
         self.per_page = kwargs["per_page"]
+        self.ew = EventWriter()
 
     def create_halo_session_object(self):
         session = cloudpassage.HaloSession(self.key_id,
@@ -103,7 +104,7 @@ class Event(object):
         date_obj = cputils.strToDate(dates[-1]["created_at"])
         return date_obj.strftime('%Y-%m-%d')
 
-    def id_exists_check(self, data, event_id):
+    def id_exists(self, data, event_id):
         """check event id exist"""
         return any(k['id'] == event_id for k in data)
 
@@ -114,3 +115,37 @@ class Event(object):
         start_date = sorted_data[0]["created_at"]
         end_date = self.get_end_date(sorted_data, end_date)
         return start_date, end_date
+
+    def send_to_splunk(self, input_name, checkpoint_name, state_store, events):
+        self.ew.log("INFO", "cphalo: batch collected, writing to splunk")
+        for ev in events:
+            event = Event()
+            event.stanza = input_name
+            event.data = json.dumps(ev)
+
+            self.ew.write_event(event)
+            state_store.update_state(checkpoint_name, ev['created_at'])
+
+    def perform(self, start_date, checkpoint, input_name, checkpoint_name, state_store):
+        end_date = start_date
+        event_id_exist = True
+        first_batch = True
+
+        try:
+            initial_event_id = self.latest_event()["events"][0]["id"]
+            while event_id_exist:
+                batched = self.batch(end_date)
+                start_date, end_date = self.loop_date(batched, end_date)
+                if self.id_exists(batched, initial_event_id):
+                    self.ew.log("INFO", "cphalo: %s detected initial event id match. Saving as final batch." % (input_name))
+                    event_id_exist = False
+
+                if checkpoint and first_batch:
+                    first_batch = False
+                    batched.pop(0)
+
+                if batched:
+                    self.send_to_splunk(input_name, checkpoint_name, state_store, batched)
+                    self.ew.log("INFO", "cphalo: %s saved events from %s to %s" % (input_name, start_date, end_date))
+        except Exception as e:
+            self.ew.log("ERROR", "Error: %s" % str(e))

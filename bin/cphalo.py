@@ -160,15 +160,6 @@ class MyScript(Script):
             if storage_password.username == api_key:
                 return storage_password.content.clear_password
 
-    def send_arr_events(self, ew, input_name, checkpoint_name, state_store, events):
-        for ev in events:
-            event = Event()
-            event.stanza = input_name
-            event.data = json.dumps(ev)
-
-            ew.write_event(event)
-            state_store.update_state(checkpoint_name, ev['created_at'])
-
     def stream_events(self, inputs, ew):
         for input_name, input_item in inputs.inputs.iteritems():
             ew.log("INFO", "Starting with %s" % (input_name))
@@ -177,8 +168,6 @@ class MyScript(Script):
             secret_key  = input_item['secret_key']
             api_host    = input_item['api_host']
             per_page    = input_item['per_page']
-            event_id_exist = True
-            first_batch = True
             self.USERNAME = api_key
 
             try:
@@ -200,7 +189,6 @@ class MyScript(Script):
             start_date = dateUtil.get_start_date(input_item, checkpoint)
 
             try:
-                # If the password is not masked, mask it.
                 if secret_key != self.MASK:
                     self.encrypt_password(api_key, secret_key, session_key)
                     self.mask_password(input_name, session_key,
@@ -212,30 +200,9 @@ class MyScript(Script):
             except Exception as e:
                 ew.log("ERROR", "Error: %s" % str(e))
 
+            event = lib.EventController(api_key, self.CLEAR_PASSWORD, api_host, per_page=per_page)
             ew.log("INFO", "%s Starting from %s with page size = %s" % (input_name, start_date, per_page))
-
-            e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, per_page=per_page)
-            end_date = start_date
-            try:
-                initial_event_id = e.latest_event()["events"][0]["id"]
-                while event_id_exist:
-                    batched = e.batch(end_date)
-                    start_date, end_date = e.loop_date(batched, end_date)
-                    if e.id_exists_check(batched, initial_event_id):
-                        ew.log("INFO", "cphalo: %s detected initial event id match. Saving as final batch." % (input_name))
-                        event_id_exist = False
-
-                    if checkpoint and first_batch:
-                        first_batch = False
-                        batched.pop(0)
-
-                    if batched:
-                        self.send_arr_events(ew, input_name, checkpoint_name, state_store, batched)
-                        ew.log("INFO", "cphalo: %s saved events from %s to %s" % (input_name, start_date, end_date))
-            except Exception as e:
-                ew.log("ERROR", "Error: %s" % str(e))
-
-
+            event.perform(start_date, checkpoint, input_name, checkpoint_name, state_store)
 
 if __name__ == "__main__":
     exitcode = MyScript().run(sys.argv)

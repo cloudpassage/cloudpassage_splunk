@@ -1,4 +1,4 @@
-from event_controller import Event
+from event_controller import EventController
 from state_store import FileStateStore
 
 __author__ = "CloudPassage"
