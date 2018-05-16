@@ -68,18 +68,18 @@ class MyScript(Script):
         )
         scheme.add_argument(proxy_port_arg)
 
-        start_date_arg = Argument(
-            name="start_date",
+        events_start_date_arg = Argument(
+            name="events_start_date",
             title="Start Date. (If checkpoint exists, it will take precedence)",
             data_type=Argument.data_type_string,
             required_on_create=False,
             required_on_edit=False
         )
-        scheme.add_argument(start_date_arg)
+        scheme.add_argument(events_start_date_arg)
 
         per_page_arg = Argument(
             name="per_page",
-            title="Number of events returned per Halo API call. (Max is 500)",
+            title="Number of Halo Events returned per API call. (Max is 500)",
             data_type=Argument.data_type_number,
             required_on_create=True,
             required_on_edit=True
@@ -100,8 +100,8 @@ class MyScript(Script):
         if secret_key == self.MASK:
             secret_key = self.get_password(session_key, api_key)
         try:
-            if validation_definition.parameters["start_date"]:
-                start_date = validation_definition.parameters["start_date"]
+            if validation_definition.parameters["events_start_date"]:
+                start_date = validation_definition.parameters["events_start_date"]
                 validate.startdate(start_date)
             if validation_definition.parameters["proxy_host"]:
                 proxy_host = validation_definition.parameters["proxy_host"]
@@ -130,7 +130,7 @@ class MyScript(Script):
         except Exception as e:
             raise Exception, "An error occurred updating credentials. Please ensure your user account has admin_all_objects and/or list_storage_passwords capabilities. Details: %s" % str(e)
 
-    def mask_password(self, input_name, session_key, api_key, api_host, proxy_host, proxy_port, start_date, per_page):
+    def mask_password(self, input_name, session_key, api_key, api_host, proxy_host, proxy_port, events_start_date, per_page):
         try:
             args = {'token': session_key, 'app': self.APP}
             service = client.connect(**args)
@@ -143,7 +143,7 @@ class MyScript(Script):
                 "api_host": api_host,
                 "proxy_host": proxy_host,
                 "proxy_port": proxy_port,
-                "start_date": start_date,
+                "events_start_date": events_start_date,
                 "per_page": per_page
             }
             item.update(**kwargs).refresh()
@@ -186,7 +186,7 @@ class MyScript(Script):
             state_store = lib.FileStateStore(inputs.metadata, input_name)
             kind, checkpoint_name = input_name.split("://")
             checkpoint = state_store.get_state(checkpoint_name)
-            start_date = dateUtil.get_start_date(input_item, checkpoint)
+            events_start_date = dateUtil.get_start_date(input_item, checkpoint)
 
             try:
                 if secret_key != self.MASK:
@@ -194,15 +194,15 @@ class MyScript(Script):
                     self.mask_password(input_name, session_key,
                                        api_key, api_host,
                                        proxy_host, proxy_port,
-                                       start_date, per_page)
+                                       events_start_date, per_page)
 
                 self.CLEAR_PASSWORD = self.get_password(session_key, api_key)
             except Exception as e:
                 ew.log("ERROR", "Error: %s" % str(e))
 
             event = lib.EventController(api_key, self.CLEAR_PASSWORD, api_host, per_page=per_page)
-            ew.log("INFO", "%s Starting from %s with page size = %s" % (input_name, start_date, per_page))
-            event.perform(start_date, checkpoint, input_name, checkpoint_name, state_store)
+            ew.log("INFO", "%s Starting from %s with page size = %s" % (input_name, events_start_date, per_page))
+            event.perform(events_start_date, checkpoint, input_name, checkpoint_name, state_store)
 
 if __name__ == "__main__":
     exitcode = MyScript().run(sys.argv)

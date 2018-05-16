@@ -7,6 +7,6 @@ def past_date(ago):
 def get_start_date(input_items, checkpoint):
     if checkpoint:
         return checkpoint
-    if "start_date" in input_items:
-        return input_items["start_date"]
+    if "events_start_date" in input_items:
+        return input_items["events_start_date"]
     return past_date(89)
