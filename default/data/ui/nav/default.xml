@@ -5,6 +5,7 @@
   <view name="violation_dashboard"/>
   <view name="time_dashboard"/>
   <view name="distribution_dashboard"/>
+  <view name="sva_violations_dashboard"/>
 
   <view name="actor_ip__map"/>
   <view name="violation_map"/>

@@ -1,0 +1,128 @@
+<form>
+  <label>SVA Violations</label>
+  <fieldset submitButton="true" autoRun="true">
+    <input type="dropdown" token="os">
+      <label>OS</label>
+      <choice value="Linux">Linux</choice>
+      <choice value="Windows">Windows</choice>
+    </input>
+    <input type="dropdown" token="hostname" searchWhenChanged="true">
+      <label>Servers</label>
+      <fieldForLabel>server_hostname</fieldForLabel>
+      <fieldForValue>server_hostname</fieldForValue>
+      <search>
+        <query>index="cloudpassage" sourcetype="cp_halo" type="vulnerable_software_package_found"
+| dedup 1 server_hostname
+| table server_hostname</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="time" token="time_span">
+      <label>Timespan</label>
+      <choice value="-24h@h">Past 24 hours</choice>
+      <choice value="-7d@d">Past 7 days</choice>
+      <choice value="-30d@d">Past 30 days</choice>
+      <choice value="-90d@d">Past 90 days</choice>
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <table>
+        <title>Top 20 Vulnerabilities For OS type</title>
+        <search>
+          <query>index="cloudpassage" sourcetype="cp_halo" type="vulnerable_software_package_found" server_platform=$os$
+| spath cves{}.CVE | rename cves{}.CVE AS CVES
+| spath cves{}.CVSS | rename cves{}.CVSS as CVSSES
+| eval x=mvzip(CVES, CVSSES, ",") | mvexpand x
+| eval x=split(x,",")
+| eval CVE=mvindex(x,0)
+| eval CVSS=mvindex(x,1)
+| sort 0 -"CVSS"
+| dedup 1 package_name
+| table package_name, CVE, CVSS
+| head 20</query>
+          <earliest>$time_span.earliest$</earliest>
+          <latest>$time_span.latest$</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Top 20 Vulnerable Servers</title>
+        <search>
+          <query>index="cloudpassage" sourcetype="cp_halo" type="vulnerable_software_package_found"
+| spath cves{}.CVE | rename cves{}.CVE AS CVES
+| spath cves{}.CVSS | rename cves{}.CVSS as CVSSES
+| eval x=mvzip(CVES, CVSSES, ",") | mvexpand x
+| eval x=split(x,",")
+| eval CVE=mvindex(x,0)
+| eval CVSS=mvindex(x,1)
+| sort 0 -"CVSS"
+| dedup 1 server_id
+| table server_id, server_ip_address
+| head 20</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <table>
+        <title>Top 10 package vulnerabilities for Server</title>
+        <search>
+          <query>index="cloudpassage" sourcetype="cp_halo" type="vulnerable_software_package_found" server_hostname=$hostname$
+| spath cves{}.CVE | rename cves{}.CVE AS CVES
+| spath cves{}.CVSS | rename cves{}.CVSS as CVSSES
+| eval x=mvzip(CVES, CVSSES, ",") | mvexpand x
+| eval x=split(x,",")
+| eval CVE=mvindex(x,0)
+| eval CVSS=mvindex(x,1)
+| sort 0 -"CVSS"
+| dedup 1 package_name
+| table package_name
+| head 10</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+    <panel>
+      <table>
+        <title>Top 10 CVEs for Server</title>
+        <search>
+          <query>index="cloudpassage" sourcetype="cp_halo" type="vulnerable_software_package_found" server_hostname=$hostname$
+| spath cves{}.CVE | rename cves{}.CVE AS CVES
+| spath cves{}.CVSS | rename cves{}.CVSS as CVSSES
+| eval x=mvzip(CVES, CVSSES, ",") | mvexpand x
+| eval x=split(x,",")
+| eval CVE=mvindex(x,0)
+| eval CVSS=mvindex(x,1)
+| sort 0 -"CVSS"
+| table CVE, CVSS
+| head 10</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+        <option name="count">10</option>
+        <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
+      </table>
+    </panel>
+  </row>
+</form>
