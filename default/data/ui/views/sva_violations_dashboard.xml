@@ -1,13 +1,26 @@
 <form>
   <label>SVA Violations</label>
   <fieldset submitButton="true" autoRun="true">
-    <input type="dropdown" token="os">
+    <input type="dropdown" token="os" searchWhenChanged="true">
       <label>OS</label>
       <choice value="Linux">Linux</choice>
       <choice value="Windows">Windows</choice>
+      <default>Linux</default>
     </input>
-    <input type="dropdown" token="hostname" searchWhenChanged="true">
-      <label>Servers</label>
+    <input type="dropdown" token="group">
+      <label>Server Group</label>
+      <fieldForLabel>server_group_name</fieldForLabel>
+      <fieldForValue>server_group_name</fieldForValue>
+      <search>
+        <query>index="cloudpassage" sourcetype="cp_halo" type="vulnerable_software_package_found"
+| dedup 1 server_group_name
+| table server_group_name</query>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </search>
+    </input>
+    <input type="dropdown" token="hostname" searchWhenChanged="false">
+      <label>Server</label>
       <fieldForLabel>server_hostname</fieldForLabel>
       <fieldForValue>server_hostname</fieldForValue>
       <search>
@@ -33,7 +46,7 @@
   <row>
     <panel>
       <table>
-        <title>Top 20 Vulnerabilities For OS type</title>
+        <title>Top 20 Vulnerabilities Based on OS type</title>
         <search>
           <query>index="cloudpassage" sourcetype="cp_halo" type="vulnerable_software_package_found" server_platform=$os$
 | spath cves{}.CVE | rename cves{}.CVE AS CVES
@@ -51,7 +64,6 @@
         </search>
         <option name="count">10</option>
         <option name="drilldown">cell</option>
-        <option name="refresh.display">progressbar</option>
       </table>
     </panel>
   </row>
@@ -69,13 +81,14 @@
 | eval CVSS=mvindex(x,1)
 | sort 0 -"CVSS"
 | dedup 1 server_id
-| table server_id, server_ip_address
+| table server_hostname, server_ip_address
 | head 20</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
+          <earliest>$time_span.earliest$</earliest>
+          <latest>$time_span.latest$</latest>
         </search>
         <option name="count">10</option>
         <option name="drilldown">cell</option>
+        <option name="refresh.display">progressbar</option>
       </table>
     </panel>
   </row>
@@ -95,9 +108,10 @@
 | dedup 1 package_name
 | table package_name
 | head 10</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
+          <earliest>$time_span.earliest$</earliest>
+          <latest>$time_span.latest$</latest>
         </search>
+        <option name="count">10</option>
         <option name="drilldown">cell</option>
         <option name="refresh.display">progressbar</option>
       </table>
@@ -116,8 +130,8 @@
 | sort 0 -"CVSS"
 | table CVE, CVSS
 | head 10</query>
-          <earliest>-24h@h</earliest>
-          <latest>now</latest>
+          <earliest>$time_span.earliest$</earliest>
+          <latest>$time_span.latest$</latest>
         </search>
         <option name="count">10</option>
         <option name="drilldown">cell</option>
