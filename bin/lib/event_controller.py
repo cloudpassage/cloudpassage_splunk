@@ -4,6 +4,7 @@ import types
 import datetime
 import os
 import signal
+import re
 import json
 from functools import partial
 import settings as settings
@@ -35,11 +36,13 @@ class Event(object):
         self.secret_key = secret_key
         self.session = self.create_halo_session_object()
         self.per_page = kwargs["per_page"]
+        self.integration_string = self.get_integration_string()
 
     def create_halo_session_object(self):
         session = cloudpassage.HaloSession(self.key_id,
                                            self.secret_key,
-                                           api_host=self.api_host)
+                                           api_host=self.api_host,
+                                           integration_string=self.integration_string)
         return session
 
     def get(self, date, page):
@@ -114,3 +117,17 @@ class Event(object):
         start_date = sorted_data[0]["created_at"]
         end_date = self.get_end_date(sorted_data, end_date)
         return start_date, end_date
+
+    def get_integration_string(self):
+        """Return integration string for this tool."""
+        return "cloudpassage_splunk/%s" % self.get_tool_version()
+
+    def get_tool_version(self):
+        """Get version of this tool from the __init__.py file."""
+        here_path = os.path.abspath(os.path.dirname(__file__))
+        init_file = os.path.join(here_path, "__init__.py")
+        ver = 0
+        with open(init_file, 'r') as i_f:
+            rx_compiled = re.compile(r"\s*__version__\s*=\s*\"(\S+)\"")
+            ver = rx_compiled.search(i_f.read()).group(1)
+        return ver

@@ -5,12 +5,15 @@ sys.path.append(path.dirname( path.dirname( path.abspath(__file__) ) ) )
 import cloudpassage
 import datetime
 import re
+import os
 
 
 def halo_session(api_key, secret_key, **kwargs):
+    integration_string = get_integration_string()
     session = cloudpassage.HaloSession(api_key, secret_key,
                                        api_host=kwargs["api_host"],
-                                       api_port=443)
+                                       api_port=443,
+                                       integration_string=integration_string)
 
     api = cloudpassage.HttpHelper(session)
     try:
@@ -63,3 +66,17 @@ def page_size(per_page):
         raise ValueError("%s is invalid. Size must be between %s and %s" % (per_page,
                                                                             min_per_page,
                                                                             max_per_page))
+
+def get_integration_string():
+    """Return integration string for this tool."""
+    return "cloudpassage_splunk/%s" % get_tool_version()
+
+def get_tool_version():
+    """Get version of this tool from the __init__.py file."""
+    here_path = os.path.abspath(os.path.dirname(__file__))
+    init_file = os.path.join(here_path, "__init__.py")
+    ver = 0
+    with open(init_file, 'r') as i_f:
+        rx_compiled = re.compile(r"\s*__version__\s*=\s*\"(\S+)\"")
+        ver = rx_compiled.search(i_f.read()).group(1)
+    return ver
