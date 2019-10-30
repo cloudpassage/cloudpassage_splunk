@@ -108,6 +108,9 @@ class MyScript(Script):
             if validation_definition.parameters["proxy_port"]:
                 proxy_port = validation_definition.parameters["proxy_port"]
 
+            if validate.optional_proxy_values(proxy_host, proxy_port):
+                proxy.set_https_proxy(proxy_host, proxy_port)
+
             validate.halo_session(api_key, secret_key, api_host=api_host)
             validate.page_size(per_page)
         except Exception as e:
@@ -180,19 +183,6 @@ class MyScript(Script):
             event_id_exist = True
             first_batch = True
             self.USERNAME = api_key
-
-            try:
-                proxy_host = input_item['proxy_host']
-            except:
-                proxy_host = None
-            try:
-                proxy_port = input_item['proxy_port']
-            except:
-                proxy_port = None
-
-            if validate.optional_proxy_values(proxy_host, proxy_port):
-                ew.log("INFO", "Setting proxy values %s:%s" % (proxy_host, proxy_port))
-                proxy.set_https_proxy(proxy_host, proxy_port)
 
             state_store = lib.FileStateStore(inputs.metadata, input_name)
             kind, checkpoint_name = input_name.split("://")
