@@ -34,9 +34,9 @@ class Event(object):
         self.api_port = 443
         self.key_id = key_id
         self.secret_key = secret_key
+        self.integration_string = self.get_integration_string()
         self.session = self.create_halo_session_object()
         self.per_page = kwargs["per_page"]
-        self.integration_string = self.get_integration_string()
 
     def create_halo_session_object(self):
         session = cloudpassage.HaloSession(self.key_id,
