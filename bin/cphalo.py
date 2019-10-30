@@ -184,6 +184,9 @@ class MyScript(Script):
             first_batch = True
             self.USERNAME = api_key
 
+            proxy_host = input_item.get('proxy_host', None)
+            proxy_port = input_item.get('proxy_port', None)
+
             state_store = lib.FileStateStore(inputs.metadata, input_name)
             kind, checkpoint_name = input_name.split("://")
             checkpoint = state_store.get_state(checkpoint_name)
