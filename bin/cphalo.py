@@ -186,6 +186,9 @@ class MyScript(Script):
 
             proxy_host = input_item.get('proxy_host', None)
             proxy_port = input_item.get('proxy_port', None)
+            if validate.optional_proxy_values(proxy_host, proxy_port):
+                ew.log("INFO", "Setting proxy values %s:%s" % (proxy_host, proxy_port))
+                proxy.set_https_proxy(proxy_host, proxy_port)
 
             state_store = lib.FileStateStore(inputs.metadata, input_name)
             kind, checkpoint_name = input_name.split("://")
