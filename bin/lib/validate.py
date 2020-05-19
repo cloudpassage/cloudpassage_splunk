@@ -63,3 +63,8 @@ def page_size(per_page):
         raise ValueError("%s is invalid. Size must be between %s and %s" % (per_page,
                                                                             min_per_page,
                                                                             max_per_page))
+
+def dedicated_log_file_name(file_name):
+    """validate dedicated log file name"""
+    if not file_name.endswith('.log'):
+        raise ValueError("%s is invalid. The file extension must be .log" % (file_name))

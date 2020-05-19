@@ -9,4 +9,3 @@ from cloudpassage.exceptions import CloudPassageResourceExistence  # noqa: F401
 from cloudpassage.exceptions import CloudPassageValidation  # noqa: F401
 from cloudpassage.retry import Retry
 import utility as init_util
-
