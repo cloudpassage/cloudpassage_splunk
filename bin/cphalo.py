@@ -6,17 +6,18 @@ import splunklib.client as client
 import lib.validate as validate
 import lib.date_util as dateUtil
 import lib.proxy as proxy
-from lib.logger import log
-
+import lib.logger as logger
 from splunklib.modularinput import *
 
 
 class MyScript(Script):
+
     # Define some global variables
     MASK = "<nothing to see here>"
     APP = __file__.split(os.sep)[-3]
     USERNAME = None
     CLEAR_PASSWORD = None
+    LOG_FILE_NAME = None
 
     def get_scheme(self):
         scheme = Scheme("CloudPassage Splunk Connector")
@@ -116,6 +117,7 @@ class MyScript(Script):
         per_page = validation_definition.parameters["per_page"]
         concurrency = validation_definition.parameters["concurrency"]
         dedicated_log = validation_definition.parameters["dedicated_log"]
+        LOG_FILE_NAME = dedicated_log
         proxy_host = None
         proxy_port = None
 
@@ -200,7 +202,6 @@ class MyScript(Script):
         for input_name, input_item in inputs.inputs.iteritems():
             ew.log("INFO", "Starting with %s" % (input_name))
             session_key = self._input_definition.metadata["session_key"]
-
             api_key = input_item["api_key"]
             secret_key = input_item['secret_key']
             api_host = input_item['api_host']
@@ -212,14 +213,15 @@ class MyScript(Script):
             self.USERNAME = api_key
 
             ew.log("INFO", "Starting with %s" % (input_name))
-            log.INFO("API key - %s" % (api_key), dedicated_log)
-            log.INFO("Secret Key - %s" % (secret_key), dedicated_log)
-            log.INFO("API host - %s" % (api_host), dedicated_log)
-            log.INFO("Per Page - %s" % (per_page), dedicated_log)
-            log.INFO("CONCURRENCY - %s" % (concurrency), dedicated_log)
-            log.INFO("Dedicated log file - %s" % (dedicated_log), dedicated_log)
-            log.INFO("Event ID list - %s" % (event_id_exist), dedicated_log)
-            log.INFO("First Batch - %s" % (first_batch), dedicated_log)
+
+            logger.log(dedicated_log, "INFO", "API key - %s" % (api_key))
+            logger.log(dedicated_log, "INFO", "Secret Key - %s" % (secret_key))
+            logger.log(dedicated_log, "INFO", "API host - %s" % (api_host))
+            logger.log(dedicated_log, "INFO", "Per Page - %s" % (per_page))
+            logger.log(dedicated_log, "INFO", "CONCURRENCY - %s" % (concurrency))
+            logger.log(dedicated_log, "INFO", "Dedicated log file - %s" % (dedicated_log))
+            logger.log(dedicated_log, "INFO", "Event ID list - %s" % (event_id_exist))
+            logger.log(dedicated_log, "INFO", "First Batch - %s" % (first_batch))
 
             try:
                 proxy_host = input_item['proxy_host']
@@ -232,16 +234,16 @@ class MyScript(Script):
 
             if validate.optional_proxy_values(proxy_host, proxy_port):
                 ew.log("INFO", "Setting proxy values %s:%s" % (proxy_host, proxy_port))
-                log.INFO("Setting proxy values %s:%s" % (proxy_host, proxy_port), dedicated_log)
+                logger.log(dedicated_log, "INFO", "Setting proxy values %s:%s" % (proxy_host, proxy_port))
                 proxy.set_https_proxy(proxy_host, proxy_port)
 
             state_store = lib.FileStateStore(inputs.metadata, input_name)
             kind, checkpoint_name = input_name.split("://")
-            log.INFO("Kind - %s" % (kind), dedicated_log)
-            log.INFO("Checkpoint name - %s" % (checkpoint_name), dedicated_log)
+            logger.log(dedicated_log, "INFO", "Kind - %s" % (kind))
+            logger.log(dedicated_log, "INFO", "Checkpoint name - %s" % (checkpoint_name))
             checkpoint = state_store.get_state(checkpoint_name)
             start_date = dateUtil.get_start_date(input_item, checkpoint)
-            log.INFO("Start date - %s" % (start_date), dedicated_log)
+            logger.log(dedicated_log, "INFO", "Start date - %s" % (start_date))
 
             try:
                 # If the password is not masked, mask it.
@@ -250,31 +252,31 @@ class MyScript(Script):
                     self.mask_password(input_name, session_key,
                                        api_key, api_host,
                                        proxy_host, proxy_port,
-                                       start_date, per_page)
+                                       start_date, per_page, concurrency, dedicated_log)
 
                 self.CLEAR_PASSWORD = self.get_password(session_key, api_key)
             except Exception as e:
                 ew.log("ERROR", "Error: %s" % str(e))
-                log.INFO("ERROR", "Error: %s" % str(e), dedicated_log)
+                logger.log(dedicated_log, "ERROR", "Error: %s" % str(e))
 
             ew.log("INFO", "%s Starting from %s with page size = %s" % (input_name, start_date, per_page))
-            log.INFO("%s Starting from %s with page size = %s" % (input_name, start_date, per_page), dedicated_log)
+            logger.log(dedicated_log, "INFO", "%s Starting from %s with page size = %s" % (input_name, start_date, per_page))
 
             e = lib.Event(api_key, self.CLEAR_PASSWORD, api_host, per_page=per_page)
             end_date = start_date
-            log.INFO("End date - %s" % (end_date), dedicated_log)
+            logger.log(dedicated_log, "INFO", "End date - %s" % (end_date))
 
             try:
                 initial_event_id = e.latest_event()["events"][0]["id"]
                 while event_id_exist:
-                    log.INFO("Inside While statement ~~~~~~~~~~~~~~~~~", dedicated_log)
+                    logger.log(dedicated_log, "INFO", "Inside While statement ~~~~~~~~~~~~~~~~~")
                     batched = e.batch(end_date)
                     start_date, end_date = e.loop_date(batched, end_date)
-                    log.INFO("start date - %s ------ end date - %s" % (start_date, end_date), dedicated_log)
+                    logger.log(dedicated_log, "INFO", "start date - %s ------ end date - %s" % (start_date, end_date))
                     if e.id_exists_check(batched, initial_event_id):
                         ew.log("INFO",
                                "cphalo: %s detected initial event id match. Saving as final batch." % (input_name))
-                        log.INFO("cphalo: %s detected initial event id match. Saving as final batch." % (input_name))
+                        logger.log(dedicated_log, "INFO", "cphalo: %s detected initial event id match. Saving as final batch." % (input_name))
                         event_id_exist = False
 
                     if checkpoint and first_batch:
@@ -284,10 +286,10 @@ class MyScript(Script):
                     if batched:
                         self.send_arr_events(ew, input_name, checkpoint_name, state_store, batched)
                         ew.log("INFO", "cphalo: %s saved events from %s to %s" % (input_name, start_date, end_date))
-                        log.INFO("cphalo: %s saved events from %s to %s" % (input_name, start_date, end_date))
+                        logger.log(dedicated_log, "INFO", "cphalo: %s saved events from %s to %s" % (input_name, start_date, end_date))
             except Exception as e:
                 ew.log("ERROR", "Error: %s" % str(e))
-                log("Error: %s" % str(e), dedicated_log)
+                logger.log(dedicated_log, "ERROR", "Error: %s" % str(e))
 
 
 if __name__ == "__main__":
