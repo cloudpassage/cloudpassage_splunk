@@ -38,11 +38,11 @@ To get started, you must have the following:
 
 * Access to your CloudPassage API key. Best practice is to create a new read-only key specifically for use with this script.
 
-* Splunk Enterprise Server 7.0 or later. You can download Splunk Enterprise Server from [here](http://www.splunk.com/download).
+* Splunk Enterprise Server 8.0.3 or later. You can download Splunk Enterprise Server from [here](http://www.splunk.com/download).
 
 ### A. Install the CloudPassage App
 
-You can obtain the CloudPassage app through Splunkbase.
+You can obtain the CloudPassage app through Splunkbase or you can generate it from [github](https://github.com/cloudpassage/cloudpassage_splunk.git) repository.
 
 ### Get the App from Splunk Apps
 
@@ -70,11 +70,18 @@ The Modular Input is a python script that makes calls to the CloudPassage API. T
 
 ![](58bbdae6-fc8f-11e7-9f9e-02a2abb09b24.png)
 
-If you do create an API key, we recommend that, as a best practice, you create a read-only key. A read-only key is all that you need to be able to retrieve Halo event data.
+If you do create an API key, we recommend that, as a best practice, you create a read-only key (audtior). A read-only key is all that you need to be able to retrieve Halo event data.
 
  ![](6008192c-fc8f-11e7-9868-02a2abb09b24.png)
 
 2. Retrieve both the **Key ID** and the **Secret Key** values for the API key. Click **Show** for your key on the **API Keys** tab to display both values.
+
+## Create cloudpassage Index
+All events will be written to an index named **cloudpassage**. Make sure to create the index via **the Splunk GUI** before activating the CloudPassage App. To create the cloudpassage index follow these steps:
+1. Login to Splunk Enterprise and from **Settings** menu navigate to **data** section and select **Indexes**.
+2. In the indexes page click on **New Index** button in the top right corner of the screen.
+3. In the **index name** input field, you must enter "cloudpassage", and for the **app** dropdown list select “CloudPassage Splunk”, all other parameters is up to the user to decide. Then click **save** button
+4. The **cloudpassage** index now created.
 
 ## Configure the App in Splunk
 
@@ -97,7 +104,7 @@ Fill in these fields:
 
 ![](be3f8ad4-fc8f-11e7-bb93-02a2abb09b24.png)
 
-* **Name:** Enter a display name for your App, such as "CloudPassage Halo". This name appears on the App's data input summary page.
+* **Name:** Enter a display name for your App, such as "cphalo". This name appears on the App's data input summary page.
 * **CloudPassage Halo API Key:** Copy your saved Halo API key ID and paste it into this field.
 * **CloudPassage Halo API Secret:** Copy your saved Halo API key secret and paste it into this field.
 * **Starting Date/Time:** Optionally enter the starting date-time of events to be retrieved from your Halo account. Use ISO-8601 format; for example 2013-09-19T17:34:28.808886Z. All events newer than this date-time will be retrieved the first time the script runs; on each subsequent run, only events newer than the newest previously retrieved event will be retrieved.Putting a value in this field is optional; if you leave it blank, the first execution of the script will retrieve all defined events from your Halo account within 90 days prior.
@@ -105,13 +112,21 @@ Please Note:
   * If checkpoint exists, it will take precedence. You can find the checkpoint in `/Splunk/var/lib/splunk/modinputs`.
   * CloudPassage Halo has a 90 days data retention period.
 * **API Hostname:** By default this is set to `api.cloudpassage.com`. If your CloudPassage API hostname is different from the default setting, please specify here.
+* **Proxy Host:** Copy your proxy host ip address and paste it into this field. (Optional)
+* **Proxy Port:** Copy your proxy port and paste it into this field. (Optional)
+* **API concurrency:** Concurrency number.
+* **Dedicated Log File Name:** the name of the dedicated log file.
 * **Set sourcetype.** Choose "Manual".
 * **Select source type from list.** Select the source type value that you specified in the Splunk props.conf file (for example, [cp_halo]; see Set up props.conf).
-
-Click Save.
+* **Set the destination index for this source:** select **cloudpassage** index from the list.
+After filling in this information, Click **Save** button.
 
 When it has finished adding the new data source, Splunk displays a success message:
 You're done! The Modular Input script is now running, automatically providing events to Splunk for indexing.
+
+Note:
+* You can find default **Splunk log** file here: “\Splunk\var\log\splunk\splunkd.log”
+* For **dedicated log** file: “\Splunk\var\log\splunk\[Dedicated Log File Name].log”
 
 ###C. View Halo Events in Splunk
 
