@@ -139,3 +139,8 @@ The CloudPassage App provides several interactive pages that allow you to view a
 ### **The Violation Dashboard page:**
 
 ![120509](6756e806-6900-11e3-b4de-005056ad5c72.png)
+
+<!---
+#CPTAGS:community-supported integration
+#TBICON:images/python_icon.png
+-->
